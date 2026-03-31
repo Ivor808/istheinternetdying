@@ -1,6 +1,7 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm ci && npm run build && npx drizzle-kit migrate"
+nixpacksVersion = "1.35.0"
+buildCommand = "npm ci --ignore-scripts && npm run build && npx drizzle-kit migrate"
 
 [deploy]
 startCommand = "npm run start"
