@@ -170,7 +170,18 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-            <XAxis dataKey="date" stroke="#666" tick={{ fontSize: 12 }} />
+            <XAxis
+              dataKey="date"
+              stroke="#666"
+              tick={{ fontSize: 11 }}
+              tickFormatter={(date: string) => {
+                const [y, m] = date.split('-');
+                const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                return `${months[Number(m) - 1]} '${y.slice(2)}`;
+              }}
+              interval="preserveStartEnd"
+              minTickGap={50}
+            />
             <YAxis domain={[0, 100]} stroke="#666" tick={{ fontSize: 12 }} />
             <Tooltip
               contentStyle={{ background: '#1a1a1a', border: '1px solid #333' }}
