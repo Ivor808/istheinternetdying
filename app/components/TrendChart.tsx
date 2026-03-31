@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   ReferenceLine,
+  ReferenceDot,
 } from 'recharts';
 import {
   AI_EVENTS,
@@ -66,6 +67,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
   const [activeEventCategories, setActiveEventCategories] = useState<
     Set<AIEvent['category']>
   >(new Set());
+  const [hoveredEvent, setHoveredEvent] = useState<AIEvent | null>(null);
 
   const allCategories = Array.from(
     new Set(history.flatMap((h) => Object.keys(h.categoryScores)))
@@ -213,112 +215,119 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-          <XAxis dataKey="date" stroke="#666" tick={{ fontSize: 12 }} />
-          <YAxis domain={[0, 100]} stroke="#666" tick={{ fontSize: 12 }} />
-          <Tooltip
-            contentStyle={{ background: '#1a1a1a', border: '1px solid #333' }}
-          />
-          <ReferenceLine
-            x="2026-01-01"
-            stroke="#ff4444"
-            strokeDasharray="6 3"
-            strokeOpacity={0.4}
-          />
-          {visibleEvents.map((event, i) => (
+      <div style={{ position: 'relative' }}>
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#222" />
+            <XAxis dataKey="date" stroke="#666" tick={{ fontSize: 12 }} />
+            <YAxis domain={[0, 100]} stroke="#666" tick={{ fontSize: 12 }} />
+            <Tooltip
+              contentStyle={{ background: '#1a1a1a', border: '1px solid #333' }}
+            />
+            {/* AI Era line — always shown */}
             <ReferenceLine
-              key={`${event.date}-${i}`}
-              x={event.date}
-              stroke={EVENT_CATEGORY_COLORS[event.category]}
-              strokeDasharray="2 4"
-              strokeOpacity={0.35}
+              x="2026-01-01"
+              stroke="#ff4444"
+              strokeDasharray="6 3"
+              strokeOpacity={0.4}
             />
-          ))}
-          <Line
-            type="monotone"
-            dataKey="global"
-            stroke="#e0e0e0"
-            strokeWidth={2}
-            dot={false}
-            name="Global Index"
-          />
-          {Array.from(activeCategories).map((cat) => (
+            <ReferenceDot
+              x="2026-01-01"
+              y={98}
+              r={0}
+              label={{ value: '▼ AI Era', fill: '#ff4444', fontSize: 10, position: 'insideBottom' }}
+            />
+            {/* Event marker lines */}
+            {visibleEvents.map((event, i) => {
+              const isHovered = hoveredEvent?.date === event.date && hoveredEvent?.label === event.label;
+              return (
+                <ReferenceLine
+                  key={`line-${event.date}-${i}`}
+                  x={event.date}
+                  stroke={EVENT_CATEGORY_COLORS[event.category]}
+                  strokeDasharray="2 4"
+                  strokeOpacity={isHovered ? 0.8 : 0.3}
+                  strokeWidth={isHovered ? 2 : 1}
+                />
+              );
+            })}
+            {/* Event dot markers at top of chart */}
+            {visibleEvents.map((event, i) => (
+              <ReferenceDot
+                key={`dot-${event.date}-${i}`}
+                x={event.date}
+                y={97}
+                r={4}
+                fill={EVENT_CATEGORY_COLORS[event.category]}
+                fillOpacity={hoveredEvent?.date === event.date && hoveredEvent?.label === event.label ? 1 : 0.6}
+                stroke="none"
+                onMouseEnter={() => setHoveredEvent(event)}
+                onMouseLeave={() => setHoveredEvent(null)}
+                style={{ cursor: 'pointer' }}
+              />
+            ))}
             <Line
-              key={cat}
               type="monotone"
-              dataKey={cat}
-              stroke={CATEGORY_COLORS[cat] ?? '#666'}
-              strokeWidth={1.5}
+              dataKey="global"
+              stroke="#e0e0e0"
+              strokeWidth={2}
               dot={false}
-              strokeDasharray="4 2"
-              name={cat}
-              connectNulls={false}
+              name="Global Index"
             />
-          ))}
-          {Array.from(activeProviders).map((slug) => (
-            <Line
-              key={slug}
-              type="monotone"
-              dataKey={slug}
-              stroke={PROVIDER_COLORS[slug] ?? '#666'}
-              strokeWidth={1.5}
-              dot={false}
-              name={providerNames[slug] ?? slug}
-              connectNulls={false}
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+            {Array.from(activeCategories).map((cat) => (
+              <Line
+                key={cat}
+                type="monotone"
+                dataKey={cat}
+                stroke={CATEGORY_COLORS[cat] ?? '#666'}
+                strokeWidth={1.5}
+                dot={false}
+                strokeDasharray="4 2"
+                name={cat}
+                connectNulls={false}
+              />
+            ))}
+            {Array.from(activeProviders).map((slug) => (
+              <Line
+                key={slug}
+                type="monotone"
+                dataKey={slug}
+                stroke={PROVIDER_COLORS[slug] ?? '#666'}
+                strokeWidth={1.5}
+                dot={false}
+                name={providerNames[slug] ?? slug}
+                connectNulls={false}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
 
-      {/* AI Era label — always shown */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '1.5rem',
-          marginTop: '0.5rem',
-          fontSize: '0.75rem',
-          fontFamily: 'monospace',
-        }}
-      >
-        <span style={{ color: '#ff4444', opacity: 0.7 }}>
-          ┆ Jan 1, 2026 — AI Era
-        </span>
-      </div>
-
-      {/* Event legend — shown when events are toggled */}
-      {visibleEvents.length > 0 && (
-        <div
-          style={{
-            marginTop: '1rem',
-            padding: '0.75rem 1rem',
-            background: '#0d0d12',
-            border: '1px solid #1a1a1a',
-            borderRadius: '8px',
-          }}
-        >
+        {/* Hover tooltip for event markers */}
+        {hoveredEvent && (
           <div
             style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.5rem 1.5rem',
-              fontSize: '0.75rem',
+              position: 'absolute',
+              top: '0.5rem',
+              right: '1rem',
+              background: '#1a1a1a',
+              border: `1px solid ${EVENT_CATEGORY_COLORS[hoveredEvent.category]}`,
+              borderRadius: '6px',
+              padding: '0.5rem 0.75rem',
+              fontSize: '0.8rem',
               fontFamily: 'monospace',
+              pointerEvents: 'none',
+              zIndex: 10,
             }}
           >
-            {visibleEvents.map((event, i) => (
-              <span
-                key={`${event.date}-${i}`}
-                style={{ color: EVENT_CATEGORY_COLORS[event.category], opacity: 0.8 }}
-              >
-                ┆ {event.date} — {event.label}
-              </span>
-            ))}
+            <div style={{ color: EVENT_CATEGORY_COLORS[hoveredEvent.category], fontWeight: 'bold' }}>
+              {hoveredEvent.label}
+            </div>
+            <div style={{ color: '#888', marginTop: '0.15rem' }}>
+              {hoveredEvent.date} · {EVENT_CATEGORY_LABELS[hoveredEvent.category]}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
