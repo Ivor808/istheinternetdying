@@ -8,7 +8,6 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   ReferenceLine,
-  Label,
 } from 'recharts';
 import {
   AI_EVENTS,
@@ -226,35 +225,16 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
             x="2026-01-01"
             stroke="#ff4444"
             strokeDasharray="6 3"
-            strokeOpacity={0.6}
-          >
-            <Label
-              value="AI Era"
-              position="insideTopRight"
-              fill="#ff4444"
-              fontSize={11}
-              opacity={0.8}
-              offset={8}
-            />
-          </ReferenceLine>
+            strokeOpacity={0.4}
+          />
           {visibleEvents.map((event, i) => (
             <ReferenceLine
               key={`${event.date}-${i}`}
               x={event.date}
               stroke={EVENT_CATEGORY_COLORS[event.category]}
-              strokeDasharray="3 3"
-              strokeOpacity={0.5}
-            >
-              <Label
-                value={event.label}
-                position="insideTop"
-                fill={EVENT_CATEGORY_COLORS[event.category]}
-                fontSize={9}
-                opacity={0.7}
-                angle={-90}
-                offset={15}
-              />
-            </ReferenceLine>
+              strokeDasharray="2 4"
+              strokeOpacity={0.35}
+            />
           ))}
           <Line
             type="monotone"
@@ -291,6 +271,54 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
           ))}
         </LineChart>
       </ResponsiveContainer>
+
+      {/* AI Era label — always shown */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '1.5rem',
+          marginTop: '0.5rem',
+          fontSize: '0.75rem',
+          fontFamily: 'monospace',
+        }}
+      >
+        <span style={{ color: '#ff4444', opacity: 0.7 }}>
+          ┆ Jan 1, 2026 — AI Era
+        </span>
+      </div>
+
+      {/* Event legend — shown when events are toggled */}
+      {visibleEvents.length > 0 && (
+        <div
+          style={{
+            marginTop: '1rem',
+            padding: '0.75rem 1rem',
+            background: '#0d0d12',
+            border: '1px solid #1a1a1a',
+            borderRadius: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.5rem 1.5rem',
+              fontSize: '0.75rem',
+              fontFamily: 'monospace',
+            }}
+          >
+            {visibleEvents.map((event, i) => (
+              <span
+                key={`${event.date}-${i}`}
+                style={{ color: EVENT_CATEGORY_COLORS[event.category], opacity: 0.8 }}
+              >
+                ┆ {event.date} — {event.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
