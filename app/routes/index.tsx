@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getDashboardData } from '@/data/dashboard';
@@ -17,6 +18,10 @@ export const Route = createFileRoute('/')({
 
 function Dashboard() {
   const data = Route.useLoaderData();
+  const history = data.history;
+  const [selectedIdx, setSelectedIdx] = useState(history.length - 1);
+  const selected = history[selectedIdx];
+  const prev = selectedIdx > 0 ? history[selectedIdx - 1] : null;
 
   return (
     <div className="dashboard">
@@ -95,9 +100,51 @@ function Dashboard() {
         </details>
       </div>
       <DoomsdayClock
-        globalScore={data.current?.globalScore ?? 100}
-        previousScore={data.previous?.globalScore ?? null}
+        globalScore={selected?.globalScore ?? 100}
+        previousScore={prev?.globalScore ?? null}
       />
+      {history.length > 1 && (
+        <div
+          style={{
+            maxWidth: '500px',
+            margin: '0 auto',
+            padding: '0 1rem',
+            textAlign: 'center',
+          }}
+        >
+          <input
+            type="range"
+            min={0}
+            max={history.length - 1}
+            value={selectedIdx}
+            onChange={(e) => setSelectedIdx(Number(e.target.value))}
+            style={{
+              width: '100%',
+              accentColor: '#ff4444',
+              cursor: 'pointer',
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontFamily: 'monospace',
+              fontSize: '0.75rem',
+              color: '#555',
+              marginTop: '0.25rem',
+            }}
+          >
+            <span>{history[0]?.date}</span>
+            <span style={{ color: '#888' }}>
+              {selected?.date ?? '—'}
+              {selectedIdx === history.length - 1 && (
+                <span style={{ color: '#ff4444' }}> (today)</span>
+              )}
+            </span>
+            <span>{history[history.length - 1]?.date}</span>
+          </div>
+        </div>
+      )}
       <TrendChart
         history={data.history}
         providerHistory={data.providerHistory}
