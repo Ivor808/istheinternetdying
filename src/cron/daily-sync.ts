@@ -39,8 +39,11 @@ export async function fetchAndStoreIncidents(): Promise<{ providerErrors: Array<
   const allProviders = await db.select().from(providers);
   const providerErrors: Array<{ slug: string; error: unknown }> = [];
 
-  for (const provider of allProviders) {
+  console.log(`[sync] Fetching incidents for ${allProviders.length} providers...`);
+  for (let idx = 0; idx < allProviders.length; idx++) {
+    const provider = allProviders[idx];
     try {
+      console.log(`[sync] ${idx + 1}/${allProviders.length} ${provider.slug}...`);
       const plugin = getProvider(provider.providerType);
 
       const existing = await db
@@ -55,6 +58,7 @@ export async function fetchAndStoreIncidents(): Promise<{ providerErrors: Array<
         provider.statusPageUrl,
         since
       );
+      console.log(`[sync] ${provider.slug}: ${fetched.length} incidents`);
 
       for (const incident of fetched) {
         await db

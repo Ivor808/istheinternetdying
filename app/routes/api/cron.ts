@@ -25,15 +25,17 @@ export const Route = createFileRoute('/api/cron')({
           });
         }
 
+        console.log('[cron] Sync request received, starting...');
         let result;
         try {
           result = await runDailySync();
+          console.log('[cron] Sync completed:', JSON.stringify(result));
         } catch (err) {
-          console.error('runDailySync failed:', err);
+          console.error('[cron] runDailySync failed:', err);
           return new Response(
             JSON.stringify({
               success: false,
-              error: process.env.NODE_ENV === 'production' ? 'Internal server error' : String(err),
+              error: String(err),
             }),
             {
               status: 500,
