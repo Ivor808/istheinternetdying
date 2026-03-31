@@ -86,7 +86,7 @@ export const atlassianProvider: StatusProvider = {
     let page = 1;
 
     while (true) {
-      const url = `${statusPageUrl}/api/v2/incidents.json?page=${page}&per_page=100`;
+      const url = `${statusPageUrl}/api/v2/incidents.json?page=${page}&per_page=50`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -111,7 +111,7 @@ export const atlassianProvider: StatusProvider = {
         }
       }
 
-      if (reachedSince || data.incidents.length < 100) break;
+      if (reachedSince || data.incidents.length < 50) break;
       page++;
     }
 

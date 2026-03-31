@@ -139,6 +139,47 @@ describe('computeSingleDayScore', () => {
     // 4h minor total = 20 deduction
     expect(computeSingleDayScore(incidents, day)).toBe(80);
   });
+
+  // Duration cap tests
+  it('caps minor incidents at 7 days — day 8 is unaffected', () => {
+    const incidents = [
+      {
+        severity: 'minor' as const,
+        // Started 10 days before our test day, never resolved
+        startedAt: new Date('2026-03-05T00:00:00Z'),
+        resolvedAt: null,
+      },
+    ];
+    // 7-day cap from Mar 5 = effective end Mar 12
+    // Our test day is Mar 15 — outside the cap, so no impact
+    expect(computeSingleDayScore(incidents, day)).toBe(100);
+  });
+
+  it('caps critical incidents at 3 days — day 4 is unaffected', () => {
+    const incidents = [
+      {
+        severity: 'critical' as const,
+        startedAt: new Date('2026-03-11T00:00:00Z'),
+        resolvedAt: null,
+      },
+    ];
+    // 3-day cap from Mar 11 = effective end Mar 14
+    // Our test day is Mar 15 — outside the cap
+    expect(computeSingleDayScore(incidents, day)).toBe(100);
+  });
+
+  it('stale unresolved minor still affects days within the cap window', () => {
+    const incidents = [
+      {
+        severity: 'minor' as const,
+        startedAt: new Date('2026-03-14T00:00:00Z'),
+        resolvedAt: null,
+      },
+    ];
+    // Started Mar 14, cap = 7 days so effective end Mar 21
+    // Mar 15 is within cap — full 24h of minor = 100 - (5*24) = -20 → 0
+    expect(computeSingleDayScore(incidents, day)).toBe(0);
+  });
 });
 
 describe('computeRollingScore', () => {

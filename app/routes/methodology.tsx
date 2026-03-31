@@ -141,6 +141,44 @@ function Methodology() {
             down for a week, then naturally rolls off.
           </p>
 
+          <p>
+            <strong style={{ color: '#ddd' }}>Duration caps:</strong>{' '}
+            Some providers leave incidents open on their status page for weeks —
+            not because there's an active outage, but because it's a known issue
+            being tracked. A "minor" GPU booting issue open for 118 days is not
+            the same as 118 days of downtime. To prevent stale entries from
+            permanently tanking a score, we cap the scoring impact of any single
+            incident:
+          </p>
+
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Severity</th>
+                <th style={thStyle}>Max scoring duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={tdStyle}><span style={{ color: '#ef4444' }}>Critical</span></td>
+                <td style={tdStyle}>3 days — real critical outages get resolved fast</td>
+              </tr>
+              <tr>
+                <td style={tdStyle}><span style={{ color: '#f97316' }}>Major</span></td>
+                <td style={tdStyle}>5 days</td>
+              </tr>
+              <tr>
+                <td style={tdStyle}><span style={{ color: '#eab308' }}>Minor</span></td>
+                <td style={tdStyle}>7 days — minor issues can linger longer</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p style={{ color: '#666', fontSize: '0.85rem' }}>
+            <em>The raw incident data is still stored with real dates — the cap
+            only applies during score computation.</em>
+          </p>
+
           <p style={{ color: '#666', fontSize: '0.85rem' }}>
             <em>Example: A provider has 3 overlapping minor SMS delivery incidents
             from 10am–2pm (4 hours), plus 1 major API outage from 1pm–2pm (1 hour).

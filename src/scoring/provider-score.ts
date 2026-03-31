@@ -4,6 +4,21 @@ interface IncidentWindow {
   resolvedAt: Date | null;
 }
 
+/**
+ * Maximum incident duration for scoring purposes (in ms).
+ * Incidents open longer than this are likely stale status page entries,
+ * not active outages. We still store the real data but cap the scoring
+ * impact. Different caps per severity:
+ * - Critical: 72 hours (3 days) — real critical outages get resolved fast
+ * - Major: 120 hours (5 days)
+ * - Minor: 168 hours (7 days) — minor issues can linger longer
+ */
+const MAX_DURATION_MS: Record<number, number> = {
+  1: 7 * 24 * 60 * 60 * 1000,   // minor: 7 days
+  2: 5 * 24 * 60 * 60 * 1000,   // major: 5 days
+  3: 3 * 24 * 60 * 60 * 1000,   // critical: 3 days
+};
+
 const SEVERITY_RANK: Record<string, number> = {
   minor: 1,
   major: 2,
@@ -47,16 +62,20 @@ export function computeSingleDayScore(
   }> = [];
 
   for (const incident of incidents) {
-    const incStart = Math.max(incident.startedAt.getTime(), dayStart.getTime());
-    const incEnd = Math.min(
-      (incident.resolvedAt ?? dayEnd).getTime(),
-      dayEnd.getTime()
-    );
-
-    if (incStart >= incEnd) continue;
-
     const rank = SEVERITY_RANK[incident.severity] ?? 0;
     if (rank === 0) continue;
+
+    // Cap incident duration to prevent stale entries from tanking scores forever
+    const maxDuration = MAX_DURATION_MS[rank] ?? MAX_DURATION_MS[1];
+    const rawEnd = incident.resolvedAt ?? dayEnd;
+    const cappedEnd = new Date(
+      Math.min(rawEnd.getTime(), incident.startedAt.getTime() + maxDuration)
+    );
+
+    const incStart = Math.max(incident.startedAt.getTime(), dayStart.getTime());
+    const incEnd = Math.min(cappedEnd.getTime(), dayEnd.getTime());
+
+    if (incStart >= incEnd) continue;
 
     dayIncidents.push({ start: incStart, end: incEnd, rank });
     edges.add(incStart);

@@ -143,7 +143,7 @@ describe('atlassian provider', () => {
       expect(result[0].externalId).toBe('inc1');
       expect(result[0].severity).toBe('major');
       expect(fetch).toHaveBeenCalledWith(
-        'https://status.example.com/api/v2/incidents.json?page=1&per_page=100'
+        'https://status.example.com/api/v2/incidents.json?page=1&per_page=50'
       );
     });
 
