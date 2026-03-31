@@ -1,5 +1,11 @@
 import type { StatusProvider, ProviderIncident } from './types';
 
+interface AtlassianComponent {
+  id: string;
+  name: string;
+  status: string;
+}
+
 interface AtlassianIncident {
   id: string;
   name: string;
@@ -7,6 +13,7 @@ interface AtlassianIncident {
   created_at: string;
   resolved_at: string | null;
   status: string;
+  components: AtlassianComponent[];
   [key: string]: unknown;
 }
 
@@ -22,11 +29,22 @@ export function mapImpactToSeverity(
       return 'critical';
     case 'major':
       return 'major';
-    case 'minor':
-    case 'none':
     default:
       return 'minor';
   }
+}
+
+/**
+ * Determine if an incident represents a real service degradation.
+ * Filters out:
+ * - impact "none" — informational posts, maintenance notices, rollouts
+ * - scheduled maintenance filed as incidents (long duration + no impact)
+ */
+export function isRealOutage(incident: AtlassianIncident): boolean {
+  // "none" impact = not a real outage
+  if (incident.impact === 'none') return false;
+
+  return true;
 }
 
 export function parseAtlassianIncident(
@@ -73,7 +91,9 @@ export const atlassianProvider: StatusProvider = {
           reachedSince = true;
           break;
         }
-        incidents.push(parseAtlassianIncident(incident));
+        if (isRealOutage(incident)) {
+          incidents.push(parseAtlassianIncident(incident));
+        }
       }
 
       if (reachedSince || data.incidents.length < 100) break;
