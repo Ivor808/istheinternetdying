@@ -55,6 +55,29 @@ function Dashboard() {
           tracking the slow heat death of the internet, one status page at a time
         </p>
       </header>
+      <div
+        style={{
+          maxWidth: '600px',
+          margin: '1.5rem auto 0',
+          padding: '0 1rem',
+          textAlign: 'center',
+          color: '#777',
+          fontSize: '0.9rem',
+          lineHeight: 1.7,
+        }}
+      >
+        <p>
+          The Death Index is a single number (0–100) representing the overall
+          reliability of the internet's most critical services. We aggregate
+          public incident data from {data.history.length > 0 ? '51' : '51'} major
+          providers across cloud infrastructure, developer tools, productivity
+          apps, and more — then compute a composite score. The closer to
+          midnight, the worse things are.{' '}
+          <a href="/methodology" style={{ color: '#ff4444', textDecoration: 'none' }}>
+            How it works →
+          </a>
+        </p>
+      </div>
       <DoomsdayClock
         globalScore={data.current?.globalScore ?? 100}
         previousScore={data.previous?.globalScore ?? null}
