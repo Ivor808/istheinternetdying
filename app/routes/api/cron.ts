@@ -33,6 +33,7 @@ export const Route = createFileRoute('/api/cron')({
         return new Response(
           JSON.stringify({
             success: true,
+            backfilled: result.backfilled,
             globalScore: result.globalScore,
             categoryScores: result.categoryScores,
           }),

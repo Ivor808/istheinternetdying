@@ -108,7 +108,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
   return (
     <div style={{ padding: '2rem 1rem' }}>
       <h2 style={{ color: '#ccc', marginBottom: '1rem' }}>
-        Reliability Index — Jan 1, 2026 to Present
+        Reliability Index — Jan 2024 to Present
       </h2>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>

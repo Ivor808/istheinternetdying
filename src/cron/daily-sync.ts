@@ -9,7 +9,8 @@ import {
 } from '../scoring/aggregation';
 import { eq, and, or, sql, gte, lte, isNull } from 'drizzle-orm';
 
-const INCEPTION_DATE = new Date('2026-01-01T00:00:00Z');
+const BACKFILL_START = new Date('2024-01-01T00:00:00Z');
+const DAILY_START = new Date('2026-01-01T00:00:00Z');
 
 export async function syncProviders(): Promise<void> {
   for (const config of providerConfigs) {
@@ -48,7 +49,7 @@ export async function fetchAndStoreIncidents(): Promise<{ providerErrors: Array<
         .where(eq(incidents.providerId, provider.id))
         .limit(1);
 
-      const since = existing.length === 0 ? INCEPTION_DATE : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const since = existing.length === 0 ? BACKFILL_START : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
       const fetched = await plugin.fetchIncidents(
         provider.statusPageUrl,
@@ -159,15 +160,69 @@ export async function computeAndStoreScores(
   return { globalScore: global, categoryScores: catScores };
 }
 
+/**
+ * Generate score dates: monthly (1st of month) from BACKFILL_START to DAILY_START,
+ * then daily from DAILY_START to today.
+ */
+function getScoreDates(today: Date): Date[] {
+  const dates: Date[] = [];
+
+  // Monthly from Jan 2024 through Dec 2025
+  const cursor = new Date(BACKFILL_START);
+  while (cursor < DAILY_START) {
+    dates.push(new Date(cursor));
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+
+  // Daily from Jan 1, 2026 through today
+  const dayCursor = new Date(DAILY_START);
+  while (dayCursor <= today) {
+    dates.push(new Date(dayCursor));
+    dayCursor.setUTCDate(dayCursor.getUTCDate() + 1);
+  }
+
+  return dates;
+}
+
+/**
+ * Check if we need to backfill by looking for any existing daily_index rows.
+ */
+async function needsBackfill(): Promise<boolean> {
+  const existing = await db
+    .select({ id: dailyIndex.id })
+    .from(dailyIndex)
+    .limit(1);
+  return existing.length === 0;
+}
+
 export async function runDailySync(): Promise<{
   globalScore: number;
   categoryScores: Record<string, number>;
+  backfilled: boolean;
 }> {
   await syncProviders();
   const { providerErrors } = await fetchAndStoreIncidents();
   if (providerErrors.length > 0) {
     console.warn(`${providerErrors.length} provider(s) failed during incident fetch:`, providerErrors.map((e) => e.slug));
   }
-  const result = await computeAndStoreScores(new Date());
-  return result;
+
+  const today = new Date();
+  const backfill = await needsBackfill();
+
+  if (backfill) {
+    console.log('No existing index data — running full backfill...');
+    const dates = getScoreDates(today);
+    console.log(`Computing scores for ${dates.length} dates (monthly 2024-2025, daily 2026+)...`);
+    let lastResult = { globalScore: 100, categoryScores: {} as Record<string, number> };
+    for (let i = 0; i < dates.length; i++) {
+      lastResult = await computeAndStoreScores(dates[i]);
+      if ((i + 1) % 6 === 0 || i === dates.length - 1) {
+        console.log(`  ${i + 1}/${dates.length} — ${dates[i].toISOString().split('T')[0]} → index ${lastResult.globalScore}`);
+      }
+    }
+    return { ...lastResult, backfilled: true };
+  }
+
+  const result = await computeAndStoreScores(today);
+  return { ...result, backfilled: false };
 }
