@@ -5,12 +5,12 @@ import { DoomsdayClock } from '../components/DoomsdayClock';
 import { TrendChart } from '../components/TrendChart';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
 
-const loadDashboard = createServerFn({ method: 'GET' }).handler(async () => {
+const loadDashboard = createServerFn().handler(async () => {
   return getDashboardData();
 });
 
 export const Route = createFileRoute('/')({
-  loader: () => loadDashboard(),
+  loader: async () => loadDashboard(),
   component: Dashboard,
 });
 
