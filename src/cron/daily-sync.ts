@@ -7,7 +7,7 @@ import {
   computeCategoryScores,
   computeGlobalIndex,
 } from '../scoring/aggregation';
-import { eq, and, sql, gte } from 'drizzle-orm';
+import { eq, and, or, sql, gte, lte, isNull } from 'drizzle-orm';
 
 const INCEPTION_DATE = new Date('2026-01-01T00:00:00Z');
 
@@ -34,48 +34,56 @@ export async function syncProviders(): Promise<void> {
   }
 }
 
-export async function fetchAndStoreIncidents(): Promise<void> {
+export async function fetchAndStoreIncidents(): Promise<{ providerErrors: Array<{ slug: string; error: unknown }> }> {
   const allProviders = await db.select().from(providers);
+  const providerErrors: Array<{ slug: string; error: unknown }> = [];
 
   for (const provider of allProviders) {
-    const plugin = getProvider(provider.providerType);
+    try {
+      const plugin = getProvider(provider.providerType);
 
-    const existing = await db
-      .select({ id: incidents.id })
-      .from(incidents)
-      .where(eq(incidents.providerId, provider.id))
-      .limit(1);
+      const existing = await db
+        .select({ id: incidents.id })
+        .from(incidents)
+        .where(eq(incidents.providerId, provider.id))
+        .limit(1);
 
-    const since = existing.length === 0 ? INCEPTION_DATE : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const since = existing.length === 0 ? INCEPTION_DATE : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const fetched = await plugin.fetchIncidents(
-      provider.statusPageUrl,
-      since
-    );
+      const fetched = await plugin.fetchIncidents(
+        provider.statusPageUrl,
+        since
+      );
 
-    for (const incident of fetched) {
-      await db
-        .insert(incidents)
-        .values({
-          providerId: provider.id,
-          externalId: incident.externalId,
-          title: incident.title,
-          severity: incident.severity,
-          startedAt: incident.startedAt,
-          resolvedAt: incident.resolvedAt,
-          raw: incident.raw,
-        })
-        .onConflictDoUpdate({
-          target: [incidents.providerId, incidents.externalId],
-          set: {
-            title: sql`excluded.title`,
-            severity: sql`excluded.severity`,
-            resolvedAt: sql`excluded.resolved_at`,
-            raw: sql`excluded.raw`,
-          },
-        });
+      for (const incident of fetched) {
+        await db
+          .insert(incidents)
+          .values({
+            providerId: provider.id,
+            externalId: incident.externalId,
+            title: incident.title,
+            severity: incident.severity,
+            startedAt: incident.startedAt,
+            resolvedAt: incident.resolvedAt,
+            raw: incident.raw,
+          })
+          .onConflictDoUpdate({
+            target: [incidents.providerId, incidents.externalId],
+            set: {
+              title: sql`excluded.title`,
+              severity: sql`excluded.severity`,
+              resolvedAt: sql`excluded.resolved_at`,
+              raw: sql`excluded.raw`,
+            },
+          });
+      }
+    } catch (err) {
+      console.error(`Failed to fetch incidents for provider ${provider.slug}:`, err);
+      providerErrors.push({ slug: provider.slug, error: err });
     }
   }
+
+  return { providerErrors };
 }
 
 export async function computeAndStoreScores(
@@ -97,7 +105,11 @@ export async function computeAndStoreScores(
       .where(
         and(
           eq(incidents.providerId, provider.id),
-          gte(incidents.startedAt, sevenDaysAgo)
+          lte(incidents.startedAt, date),
+          or(
+            isNull(incidents.resolvedAt),
+            gte(incidents.resolvedAt, sevenDaysAgo)
+          )
         )
       );
 
@@ -152,7 +164,10 @@ export async function runDailySync(): Promise<{
   categoryScores: Record<string, number>;
 }> {
   await syncProviders();
-  await fetchAndStoreIncidents();
+  const { providerErrors } = await fetchAndStoreIncidents();
+  if (providerErrors.length > 0) {
+    console.warn(`${providerErrors.length} provider(s) failed during incident fetch:`, providerErrors.map((e) => e.slug));
+  }
   const result = await computeAndStoreScores(new Date());
   return result;
 }

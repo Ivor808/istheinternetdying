@@ -1,6 +1,6 @@
 import { db } from '../db/client';
 import { dailyIndex, dailyScores, providers } from '../db/schema';
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql, inArray } from 'drizzle-orm';
 
 export interface DashboardData {
   current: {
@@ -41,12 +41,18 @@ export async function getDashboardData(): Promise<DashboardData> {
     .orderBy(desc(dailyIndex.date))
     .limit(1);
 
-  const [previous] = await db
-    .select()
-    .from(dailyIndex)
-    .orderBy(desc(dailyIndex.date))
-    .limit(1)
-    .offset(7);
+  let previous: typeof current | undefined;
+  if (current) {
+    const currentDate = new Date(current.date + 'T00:00:00Z');
+    const sevenDaysBefore = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysBeforeStr = sevenDaysBefore.toISOString().split('T')[0];
+    const [previousRow] = await db
+      .select()
+      .from(dailyIndex)
+      .where(eq(dailyIndex.date, sevenDaysBeforeStr))
+      .limit(1);
+    previous = previousRow;
+  }
 
   const history = await db
     .select({
@@ -60,7 +66,7 @@ export async function getDashboardData(): Promise<DashboardData> {
   const notableProviderRows = await db
     .select({ id: providers.id, slug: providers.slug, name: providers.name })
     .from(providers)
-    .where(sql`${providers.slug} = ANY(${NOTABLE_PROVIDERS})`);
+    .where(inArray(providers.slug, NOTABLE_PROVIDERS));
 
   let providerHistory: DashboardData['providerHistory'] = [];
   for (const p of notableProviderRows) {
