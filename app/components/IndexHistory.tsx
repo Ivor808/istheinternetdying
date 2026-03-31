@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 interface IndexHistoryEntry {
   date: string;
   globalScore: number;
@@ -7,6 +9,8 @@ interface IndexHistoryEntry {
 interface IndexHistoryProps {
   history: IndexHistoryEntry[];
 }
+
+const PAGE_SIZE = 20;
 
 function scoreColor(score: number): string {
   if (score >= 95) return '#22c55e';
@@ -21,8 +25,10 @@ function minutesToMidnight(score: number): string {
 }
 
 export function IndexHistory({ history }: IndexHistoryProps) {
-  // Show newest first
   const rows = [...history].reverse();
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+  const pageRows = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <div style={{ padding: '2rem 1rem' }}>
@@ -53,8 +59,9 @@ export function IndexHistory({ history }: IndexHistoryProps) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => {
-              const prev = rows[i + 1];
+            {pageRows.map((row, i) => {
+              const globalIndex = page * PAGE_SIZE + i;
+              const prev = rows[globalIndex + 1];
               const delta = prev ? row.globalScore - prev.globalScore : null;
 
               return (
@@ -98,6 +105,36 @@ export function IndexHistory({ history }: IndexHistoryProps) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem',
+            marginTop: '1rem',
+          }}
+        >
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            style={btnStyle(page === 0)}
+          >
+            Newer
+          </button>
+          <span style={{ color: '#666', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1}
+            style={btnStyle(page === totalPages - 1)}
+          >
+            Older
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -117,3 +154,16 @@ const tdStyle: React.CSSProperties = {
   textAlign: 'right',
   color: '#ccc',
 };
+
+function btnStyle(disabled: boolean): React.CSSProperties {
+  return {
+    padding: '0.4rem 1rem',
+    borderRadius: '6px',
+    border: '1px solid #333',
+    background: disabled ? 'transparent' : '#1a1a1a',
+    color: disabled ? '#444' : '#ccc',
+    cursor: disabled ? 'default' : 'pointer',
+    fontSize: '0.8rem',
+    fontFamily: 'monospace',
+  };
+}
