@@ -5,7 +5,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ['dist/', '.output/', '.vinxi/', '.tanstack/', 'drizzle/', 'app/routeTree.gen.ts'],
+    ignores: ['dist/', '.output/', '.vinxi/', '.tanstack/', 'drizzle/', 'app/routeTree.gen.ts', 'server.js'],
   },
   {
     rules: {
