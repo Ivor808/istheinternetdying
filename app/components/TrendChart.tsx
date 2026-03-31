@@ -84,13 +84,33 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
     ? { min: history[0].date, max: history[history.length - 1].date }
     : null;
 
+  // Snap events to nearest data point so Recharts can render them
+  const dataPointDates = new Set(history.map((h) => h.date));
+  const snapToNearest = (eventDate: string): string | null => {
+    if (dataPointDates.has(eventDate)) return eventDate;
+    const eventTime = new Date(eventDate).getTime();
+    let closest: string | null = null;
+    let closestDist = Infinity;
+    for (const d of dataPointDates) {
+      const dist = Math.abs(new Date(d).getTime() - eventTime);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = d;
+      }
+    }
+    return closest;
+  };
+
   const visibleEvents = dateRange
-    ? AI_EVENTS.filter(
-        (e) =>
-          activeEventCategories.has(e.category) &&
-          e.date >= dateRange.min &&
-          e.date <= dateRange.max
-      )
+    ? AI_EVENTS
+        .filter(
+          (e) =>
+            activeEventCategories.has(e.category) &&
+            e.date >= dateRange.min &&
+            e.date <= dateRange.max
+        )
+        .map((e) => ({ ...e, snappedDate: snapToNearest(e.date) }))
+        .filter((e): e is typeof e & { snappedDate: string } => e.snappedDate !== null)
     : [];
 
   const chartData = history.map((h) => {
@@ -146,75 +166,6 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
         Reliability Index — Jan 2024 to Present
       </h2>
 
-      {/* Overlays toggle bar */}
-      <div style={{ marginBottom: '1rem' }}>
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-            alignItems: 'center',
-          }}
-        >
-          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-            categories
-          </span>
-          {allCategories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => toggleCategory(cat)}
-              style={pillStyle(
-                activeCategories.has(cat),
-                CATEGORY_COLORS[cat] ?? '#666'
-              )}
-            >
-              {cat}
-            </button>
-          ))}
-          <span style={{ color: '#333', padding: '0 0.25rem' }}>|</span>
-          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-            providers
-          </span>
-          {allProviders.map((slug) => (
-            <button
-              key={slug}
-              onClick={() => toggleProvider(slug)}
-              style={pillStyle(
-                activeProviders.has(slug),
-                PROVIDER_COLORS[slug] ?? '#666'
-              )}
-            >
-              {providerNames[slug] ?? slug}
-            </button>
-          ))}
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-            alignItems: 'center',
-            marginTop: '0.5rem',
-          }}
-        >
-          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-            ai events
-          </span>
-          {EVENT_CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => toggleEventCategory(cat)}
-              style={pillStyle(
-                activeEventCategories.has(cat),
-                EVENT_CATEGORY_COLORS[cat]
-              )}
-            >
-              {EVENT_CATEGORY_LABELS[cat]}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div style={{ position: 'relative' }}>
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={chartData}>
@@ -242,8 +193,8 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               const isHovered = hoveredEvent?.date === event.date && hoveredEvent?.label === event.label;
               return (
                 <ReferenceLine
-                  key={`line-${event.date}-${i}`}
-                  x={event.date}
+                  key={`line-${event.snappedDate}-${i}`}
+                  x={event.snappedDate}
                   stroke={EVENT_CATEGORY_COLORS[event.category]}
                   strokeDasharray="2 4"
                   strokeOpacity={isHovered ? 0.8 : 0.3}
@@ -254,8 +205,8 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
             {/* Event dot markers at top of chart */}
             {visibleEvents.map((event, i) => (
               <ReferenceDot
-                key={`dot-${event.date}-${i}`}
-                x={event.date}
+                key={`dot-${event.snappedDate}-${i}`}
+                x={event.snappedDate}
                 y={97}
                 r={4}
                 fill={EVENT_CATEGORY_COLORS[event.category]}
@@ -327,6 +278,75 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Controls below chart */}
+      <div style={{ marginTop: '1rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            alignItems: 'center',
+          }}
+        >
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+            categories
+          </span>
+          {allCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => toggleCategory(cat)}
+              style={pillStyle(
+                activeCategories.has(cat),
+                CATEGORY_COLORS[cat] ?? '#666'
+              )}
+            >
+              {cat}
+            </button>
+          ))}
+          <span style={{ color: '#333', padding: '0 0.25rem' }}>|</span>
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+            providers
+          </span>
+          {allProviders.map((slug) => (
+            <button
+              key={slug}
+              onClick={() => toggleProvider(slug)}
+              style={pillStyle(
+                activeProviders.has(slug),
+                PROVIDER_COLORS[slug] ?? '#666'
+              )}
+            >
+              {providerNames[slug] ?? slug}
+            </button>
+          ))}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            alignItems: 'center',
+            marginTop: '0.5rem',
+          }}
+        >
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+            ai events
+          </span>
+          {EVENT_CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => toggleEventCategory(cat)}
+              style={pillStyle(
+                activeEventCategories.has(cat),
+                EVENT_CATEGORY_COLORS[cat]
+              )}
+            >
+              {EVENT_CATEGORY_LABELS[cat]}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
