@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# Load .env
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+fi
+
+usage() {
+  echo "Usage: doom <command>"
+  echo ""
+  echo "Commands:"
+  echo "  up        Start local Supabase"
+  echo "  down      Stop local Supabase"
+  echo "  migrate   Run Drizzle migrations"
+  echo "  wipe      Drop all tables and re-migrate"
+  echo "  sync      Trigger daily cron sync"
+  echo "  dev       Start the dev server"
+  echo "  status    Show Supabase status"
+  echo "  studio    Open Supabase Studio URL"
+  echo "  db        Open psql shell in the database"
+}
+
+cmd_up() {
+  supabase start
+}
+
+cmd_down() {
+  supabase stop
+}
+
+cmd_migrate() {
+  npx drizzle-kit migrate
+}
+
+cmd_wipe() {
+  echo "Dropping all tables..."
+  docker exec supabase_db_doomsd psql -U postgres -d postgres -c "
+    DROP TABLE IF EXISTS daily_index CASCADE;
+    DROP TABLE IF EXISTS daily_scores CASCADE;
+    DROP TABLE IF EXISTS incidents CASCADE;
+    DROP TABLE IF EXISTS providers CASCADE;
+    DROP TABLE IF EXISTS __drizzle_migrations CASCADE;
+  "
+  echo "Re-running migrations..."
+  npx drizzle-kit migrate
+  echo "Done. Clean database ready."
+}
+
+cmd_sync() {
+  local secret="${CRON_SECRET:-change-me-in-production}"
+  local port="${DEV_PORT:-5173}"
+  curl -s -X POST "http://localhost:${port}/api/cron" \
+    -H "Authorization: Bearer ${secret}" \
+    -H "Content-Type: application/json" | jq . 2>/dev/null || cat
+}
+
+cmd_dev() {
+  npm run dev
+}
+
+cmd_status() {
+  supabase status
+}
+
+cmd_studio() {
+  echo "http://127.0.0.1:54333"
+}
+
+cmd_db() {
+  docker exec -it supabase_db_doomsd psql -U postgres -d postgres
+}
+
+if [ $# -eq 0 ]; then
+  usage
+  exit 1
+fi
+
+case "$1" in
+  up)      cmd_up ;;
+  down)    cmd_down ;;
+  migrate) cmd_migrate ;;
+  wipe)    cmd_wipe ;;
+  sync)    cmd_sync ;;
+  dev)     cmd_dev ;;
+  status)  cmd_status ;;
+  studio)  cmd_studio ;;
+  db)      cmd_db ;;
+  *)       echo "Unknown command: $1"; usage; exit 1 ;;
+esac
