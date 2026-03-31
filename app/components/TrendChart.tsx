@@ -7,6 +7,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  ReferenceLine,
+  Label,
 } from 'recharts';
 
 interface HistoryEntry {
@@ -161,6 +163,21 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
           <Tooltip
             contentStyle={{ background: '#1a1a1a', border: '1px solid #333' }}
           />
+          <ReferenceLine
+            x="2026-01-01"
+            stroke="#ff4444"
+            strokeDasharray="6 3"
+            strokeOpacity={0.6}
+          >
+            <Label
+              value="AI Era"
+              position="insideTopRight"
+              fill="#ff4444"
+              fontSize={11}
+              opacity={0.8}
+              offset={8}
+            />
+          </ReferenceLine>
           <Line
             type="monotone"
             dataKey="global"
