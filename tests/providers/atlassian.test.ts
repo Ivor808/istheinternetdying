@@ -6,7 +6,34 @@ import {
   atlassianProvider,
 } from '../../src/providers/atlassian';
 
+// validateStatusPageUrl is not exported, but we test it via fetchIncidents
 describe('atlassian provider', () => {
+  describe('URL validation (via fetchIncidents)', () => {
+    it('rejects http URLs', async () => {
+      await expect(
+        atlassianProvider.fetchIncidents('http://status.example.com', new Date())
+      ).rejects.toThrow('Only HTTPS URLs are allowed');
+    });
+
+    it('rejects localhost', async () => {
+      await expect(
+        atlassianProvider.fetchIncidents('https://localhost:5432', new Date())
+      ).rejects.toThrow('Private/internal URLs are not allowed');
+    });
+
+    it('rejects private IPs', async () => {
+      await expect(
+        atlassianProvider.fetchIncidents('https://192.168.1.1', new Date())
+      ).rejects.toThrow('Private/internal URLs are not allowed');
+      await expect(
+        atlassianProvider.fetchIncidents('https://10.0.0.1', new Date())
+      ).rejects.toThrow('Private/internal URLs are not allowed');
+      await expect(
+        atlassianProvider.fetchIncidents('https://127.0.0.1', new Date())
+      ).rejects.toThrow('Private/internal URLs are not allowed');
+    });
+  });
+
   describe('mapImpactToSeverity', () => {
     it('maps minor to minor', () => {
       expect(mapImpactToSeverity('minor')).toBe('minor');

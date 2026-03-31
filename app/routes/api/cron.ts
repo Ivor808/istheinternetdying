@@ -1,12 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { timingSafeEqual } from 'crypto';
 import { runDailySync } from '@/cron/daily-sync';
+
+function verifyAuth(authHeader: string | null): boolean {
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
+  if (!authHeader || authHeader.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
+}
 
 export const Route = createFileRoute('/api/cron')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const authHeader = request.headers.get('authorization');
-        if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        if (!verifyAuth(request.headers.get('authorization'))) {
           return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
             headers: { 'Content-Type': 'application/json' },

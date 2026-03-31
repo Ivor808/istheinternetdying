@@ -60,6 +60,19 @@ export function parseAtlassianIncident(
   };
 }
 
+const PRIVATE_HOST_PATTERNS = /^(localhost|127\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.|192\.168\.|169\.254\.|0\.0\.0\.0|\[::1\])/;
+
+function validateStatusPageUrl(statusPageUrl: string): URL {
+  const url = new URL(statusPageUrl);
+  if (url.protocol !== 'https:') {
+    throw new Error(`Only HTTPS URLs are allowed, got: ${url.protocol}`);
+  }
+  if (PRIVATE_HOST_PATTERNS.test(url.hostname)) {
+    throw new Error(`Private/internal URLs are not allowed: ${url.hostname}`);
+  }
+  return url;
+}
+
 export const atlassianProvider: StatusProvider = {
   type: 'atlassian',
 
@@ -67,6 +80,8 @@ export const atlassianProvider: StatusProvider = {
     statusPageUrl: string,
     since: Date
   ): Promise<ProviderIncident[]> {
+    validateStatusPageUrl(statusPageUrl);
+
     const incidents: ProviderIncident[] = [];
     let page = 1;
 
