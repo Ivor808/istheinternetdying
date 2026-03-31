@@ -3,9 +3,15 @@ import { timingSafeEqual } from 'crypto';
 import { runDailySync } from '@/cron/daily-sync';
 
 function verifyAuth(authHeader: string | null): boolean {
-  const expected = `Bearer ${process.env.CRON_SECRET}`;
-  if (!authHeader || authHeader.length !== expected.length) return false;
-  return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
+  const secret = process.env.CRON_SECRET?.trim();
+  if (!secret) {
+    console.error('CRON_SECRET is not set');
+    return false;
+  }
+  const expected = `Bearer ${secret}`;
+  const actual = (authHeader ?? '').trim();
+  if (actual.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(actual), Buffer.from(expected));
 }
 
 export const Route = createFileRoute('/api/cron')({
