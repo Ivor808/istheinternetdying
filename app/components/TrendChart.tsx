@@ -10,6 +10,12 @@ import {
   ReferenceLine,
   Label,
 } from 'recharts';
+import {
+  AI_EVENTS,
+  EVENT_CATEGORY_COLORS,
+  EVENT_CATEGORY_LABELS,
+  type AIEvent,
+} from '@/data/ai-events';
 
 interface HistoryEntry {
   date: string;
@@ -49,6 +55,8 @@ const PROVIDER_COLORS: Record<string, string> = {
   reddit: '#ff4500',
 };
 
+const EVENT_CATEGORIES: AIEvent['category'][] = ['model', 'tool', 'industry'];
+
 export function TrendChart({ history, providerHistory }: TrendChartProps) {
   const [activeCategories, setActiveCategories] = useState<Set<string>>(
     new Set()
@@ -56,6 +64,9 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
   const [activeProviders, setActiveProviders] = useState<Set<string>>(
     new Set()
   );
+  const [activeEventCategories, setActiveEventCategories] = useState<
+    Set<AIEvent['category']>
+  >(new Set());
 
   const allCategories = Array.from(
     new Set(history.flatMap((h) => Object.keys(h.categoryScores)))
@@ -66,6 +77,20 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
   const providerNames = Object.fromEntries(
     providerHistory.map((p) => [p.slug, p.name])
   );
+
+  // Only show events that fall within our data range
+  const dateRange = history.length > 0
+    ? { min: history[0].date, max: history[history.length - 1].date }
+    : null;
+
+  const visibleEvents = dateRange
+    ? AI_EVENTS.filter(
+        (e) =>
+          activeEventCategories.has(e.category) &&
+          e.date >= dateRange.min &&
+          e.date <= dateRange.max
+      )
+    : [];
 
   const chartData = history.map((h) => {
     const entry: Record<string, number | string | undefined> = {
@@ -105,52 +130,88 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
     });
   };
 
+  const toggleEventCategory = (cat: AIEvent['category']) => {
+    setActiveEventCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
   return (
     <div style={{ padding: '2rem 1rem' }}>
       <h2 style={{ color: '#ccc', marginBottom: '1rem' }}>
         Reliability Index — Jan 2024 to Present
       </h2>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
-        {allCategories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => toggleCategory(cat)}
-            style={{
-              padding: '0.25rem 0.75rem',
-              borderRadius: '9999px',
-              border: `1px solid ${CATEGORY_COLORS[cat] ?? '#666'}`,
-              background: activeCategories.has(cat)
-                ? CATEGORY_COLORS[cat] ?? '#666'
-                : 'transparent',
-              color: activeCategories.has(cat) ? '#fff' : CATEGORY_COLORS[cat] ?? '#666',
-              cursor: 'pointer',
-              fontSize: '0.8rem',
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-        <span style={{ color: '#555', padding: '0.25rem 0' }}>|</span>
-        {allProviders.map((slug) => (
-          <button
-            key={slug}
-            onClick={() => toggleProvider(slug)}
-            style={{
-              padding: '0.25rem 0.75rem',
-              borderRadius: '9999px',
-              border: `1px solid ${PROVIDER_COLORS[slug] ?? '#666'}`,
-              background: activeProviders.has(slug)
-                ? PROVIDER_COLORS[slug] ?? '#666'
-                : 'transparent',
-              color: activeProviders.has(slug) ? '#fff' : PROVIDER_COLORS[slug] ?? '#666',
-              cursor: 'pointer',
-              fontSize: '0.8rem',
-            }}
-          >
-            {providerNames[slug] ?? slug}
-          </button>
-        ))}
+      {/* Overlays toggle bar */}
+      <div style={{ marginBottom: '1rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            alignItems: 'center',
+          }}
+        >
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+            categories
+          </span>
+          {allCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => toggleCategory(cat)}
+              style={pillStyle(
+                activeCategories.has(cat),
+                CATEGORY_COLORS[cat] ?? '#666'
+              )}
+            >
+              {cat}
+            </button>
+          ))}
+          <span style={{ color: '#333', padding: '0 0.25rem' }}>|</span>
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+            providers
+          </span>
+          {allProviders.map((slug) => (
+            <button
+              key={slug}
+              onClick={() => toggleProvider(slug)}
+              style={pillStyle(
+                activeProviders.has(slug),
+                PROVIDER_COLORS[slug] ?? '#666'
+              )}
+            >
+              {providerNames[slug] ?? slug}
+            </button>
+          ))}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            alignItems: 'center',
+            marginTop: '0.5rem',
+          }}
+        >
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+            ai events
+          </span>
+          {EVENT_CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => toggleEventCategory(cat)}
+              style={pillStyle(
+                activeEventCategories.has(cat),
+                EVENT_CATEGORY_COLORS[cat]
+              )}
+            >
+              {EVENT_CATEGORY_LABELS[cat]}
+            </button>
+          ))}
+        </div>
       </div>
 
       <ResponsiveContainer width="100%" height={400}>
@@ -176,6 +237,25 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               offset={8}
             />
           </ReferenceLine>
+          {visibleEvents.map((event, i) => (
+            <ReferenceLine
+              key={`${event.date}-${i}`}
+              x={event.date}
+              stroke={EVENT_CATEGORY_COLORS[event.category]}
+              strokeDasharray="3 3"
+              strokeOpacity={0.5}
+            >
+              <Label
+                value={event.label}
+                position="insideTop"
+                fill={EVENT_CATEGORY_COLORS[event.category]}
+                fontSize={9}
+                opacity={0.7}
+                angle={-90}
+                offset={15}
+              />
+            </ReferenceLine>
+          ))}
           <Line
             type="monotone"
             dataKey="global"
@@ -213,4 +293,18 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
       </ResponsiveContainer>
     </div>
   );
+}
+
+function pillStyle(active: boolean, color: string): React.CSSProperties {
+  return {
+    padding: '0.2rem 0.6rem',
+    borderRadius: '9999px',
+    border: `1px solid ${color}`,
+    background: active ? color : 'transparent',
+    color: active ? '#fff' : color,
+    cursor: 'pointer',
+    fontSize: '0.75rem',
+    fontFamily: 'monospace',
+    transition: 'all 0.15s',
+  };
 }
