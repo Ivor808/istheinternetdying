@@ -96,6 +96,22 @@ export async function computeAndStoreScores(
   const providerScoreEntries: { category: string; score: number }[] = [];
 
   for (const provider of allProviders) {
+    // Check if this provider has ANY incident data at or before this date.
+    // No data means we can't distinguish "perfect uptime" from "no coverage" —
+    // so we omit the provider entirely rather than assuming 100.
+    const [hasData] = await db
+      .select({ id: incidents.id })
+      .from(incidents)
+      .where(
+        and(
+          eq(incidents.providerId, provider.id),
+          lte(incidents.startedAt, date)
+        )
+      )
+      .limit(1);
+
+    if (!hasData) continue;
+
     const providerIncidents = await db
       .select({
         severity: incidents.severity,
