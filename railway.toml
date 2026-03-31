@@ -1,10 +1,8 @@
 [build]
-builder = "nixpacks"
-nixpacksVersion = "1.35.0"
-buildCommand = "npm ci --ignore-scripts && npm run build && npx drizzle-kit migrate"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "npm run start"
 healthcheckPath = "/"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
