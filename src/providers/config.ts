@@ -11,7 +11,7 @@ export const providerConfigs: ProviderConfig[] = [
 
   // AI
   { name: 'OpenAI', slug: 'openai', category: 'ai', providerType: 'atlassian', statusPageUrl: 'https://status.openai.com' },
-  { name: 'Anthropic', slug: 'anthropic', category: 'ai', providerType: 'atlassian', statusPageUrl: 'https://status.anthropic.com' },
+  { name: 'Anthropic', slug: 'anthropic', category: 'ai', providerType: 'atlassian', statusPageUrl: 'https://status.claude.com' },
 
   // Dev Tools
   { name: 'GitHub', slug: 'github', category: 'dev-tools', providerType: 'atlassian', statusPageUrl: 'https://www.githubstatus.com' },
