@@ -23,24 +23,36 @@ function Dashboard() {
       <header style={{ textAlign: 'center', padding: '2rem 1rem 0' }}>
         <h1
           style={{
-            fontSize: '3rem',
+            fontSize: '2.5rem',
             fontWeight: 900,
             letterSpacing: '-0.02em',
             color: '#e0e0e0',
             fontFamily: 'monospace',
           }}
         >
-          doomsd<span style={{ color: '#ff4444' }}>.</span>ai
+          is the internet dying<span style={{ color: '#ff4444' }}>?</span>
         </h1>
         <p
           style={{
-            fontSize: '1rem',
-            color: '#666',
+            fontSize: '1.1rem',
+            color: '#888',
+            marginTop: '0.5rem',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            fontFamily: 'monospace',
+          }}
+        >
+          the <span style={{ color: '#ff4444' }}>dying</span> index
+        </p>
+        <p
+          style={{
+            fontSize: '0.85rem',
+            color: '#555',
             marginTop: '0.25rem',
             fontStyle: 'italic',
           }}
         >
-          monitoring the slow heat death of the internet, one status page at a time
+          tracking the slow heat death of the internet, one status page at a time
         </p>
       </header>
       <DoomsdayClock
@@ -63,6 +75,26 @@ function Dashboard() {
           }
         />
       )}
+      <footer
+        style={{
+          borderTop: '1px solid #1a1a1a',
+          marginTop: '3rem',
+          padding: '2rem 1rem',
+          textAlign: 'center',
+          color: '#444',
+          fontSize: '0.75rem',
+          lineHeight: 1.6,
+        }}
+      >
+        <p>
+          istheinternetdying.com is an independent project. The Dying Index is computed
+          from publicly available status page data and represents an analytical
+          interpretation — not an endorsement of or affiliation with any listed provider.
+        </p>
+        <p style={{ marginTop: '0.5rem' }}>
+          Not financial, operational, or professional advice. Just vibes and math.
+        </p>
+      </footer>
     </div>
   );
 }

@@ -5,11 +5,11 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Doomsd.ai — Service Reliability Index' },
+      { title: 'Is The Internet Dying? — The Dying Index' },
       {
         name: 'description',
         content:
-          'Is the internet getting worse? Track SaaS reliability with the Doomsday Index.',
+          'Tracking the slow heat death of the internet, one status page at a time. The Dying Index aggregates SaaS reliability data into a single score.',
       },
     ],
   }),

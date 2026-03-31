@@ -33,7 +33,7 @@ export function IndexHistory({ history }: IndexHistoryProps) {
   return (
     <div style={{ padding: '2rem 1rem' }}>
       <h2 style={{ color: '#ccc', marginBottom: '1rem' }}>
-        Doomsday Index History
+        Dying Index History
       </h2>
       <div
         style={{
