@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeCategoryScores,
   computeGlobalIndex,
-} from '../src/scoring/aggregation';
+} from '../../src/scoring/aggregation';
 
 describe('computeCategoryScores', () => {
   it('averages scores within each category', () => {
