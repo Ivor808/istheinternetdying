@@ -1,4 +1,5 @@
 import type { StatusProvider } from './types';
+import { atlassianProvider } from './atlassian';
 
 const providers = new Map<string, StatusProvider>();
 
@@ -13,3 +14,6 @@ export function getProvider(type: string): StatusProvider {
   }
   return provider;
 }
+
+// Auto-register built-in providers
+registerProvider(atlassianProvider);
