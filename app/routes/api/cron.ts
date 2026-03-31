@@ -25,34 +25,22 @@ export const Route = createFileRoute('/api/cron')({
           });
         }
 
-        console.log('[cron] Sync request received, starting...');
-        let result;
-        try {
-          result = await runDailySync();
-          console.log('[cron] Sync completed:', JSON.stringify(result));
-        } catch (err) {
-          console.error('[cron] runDailySync failed:', err);
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: String(err),
-            }),
-            {
-              status: 500,
-              headers: { 'Content-Type': 'application/json' },
-            }
-          );
-        }
+        console.log('[cron] Sync request received, running in background...');
+
+        // Fire and forget — Railway has a 10min first-byte timeout,
+        // and backfill can take 15+ minutes. Return immediately.
+        runDailySync()
+          .then((result) => {
+            console.log('[cron] Sync completed:', JSON.stringify(result));
+          })
+          .catch((err) => {
+            console.error('[cron] Sync failed:', err);
+          });
 
         return new Response(
-          JSON.stringify({
-            success: true,
-            backfilled: result.backfilled,
-            globalScore: result.globalScore,
-            categoryScores: result.categoryScores,
-          }),
+          JSON.stringify({ success: true, message: 'Sync started' }),
           {
-            status: 200,
+            status: 202,
             headers: { 'Content-Type': 'application/json' },
           }
         );
