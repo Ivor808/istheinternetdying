@@ -43,8 +43,10 @@ const PROVIDER_COLORS: Record<string, string> = {
   github: '#8b5cf6',
   openai: '#10a37f',
   anthropic: '#d4a574',
-  stripe: '#635bff',
   discord: '#5865f2',
+  npm: '#cb3837',
+  dropbox: '#0061ff',
+  reddit: '#ff4500',
 };
 
 export function TrendChart({ history, providerHistory }: TrendChartProps) {

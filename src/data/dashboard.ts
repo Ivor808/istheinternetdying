@@ -30,8 +30,10 @@ const NOTABLE_PROVIDERS = [
   'github',
   'openai',
   'anthropic',
-  'stripe',
   'discord',
+  'npm',
+  'dropbox',
+  'reddit',
 ];
 
 export async function getDashboardData(): Promise<DashboardData> {
