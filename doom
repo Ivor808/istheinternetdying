@@ -43,7 +43,7 @@ cmd_wipe() {
     DROP TABLE IF EXISTS daily_scores CASCADE;
     DROP TABLE IF EXISTS incidents CASCADE;
     DROP TABLE IF EXISTS providers CASCADE;
-    DROP TABLE IF EXISTS __drizzle_migrations CASCADE;
+    DROP SCHEMA IF EXISTS drizzle CASCADE;
   "
   echo "Re-running migrations..."
   npx drizzle-kit migrate
