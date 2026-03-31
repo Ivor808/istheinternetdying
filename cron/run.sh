@@ -15,7 +15,7 @@ HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
   -X POST "$APP_URL/api/cron" \
   -H "Authorization: Bearer $CRON_SECRET" \
   -H "Content-Type: application/json" \
-  --max-time 300 \
+  --max-time 1800 \
   --connect-timeout 10 \
   2>&1) || true
 
