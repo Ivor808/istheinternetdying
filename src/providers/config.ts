@@ -13,6 +13,9 @@ export const providerConfigs: ProviderConfig[] = [
   { name: 'MongoDB', slug: 'mongodb', category: 'cloud-infra', providerType: 'atlassian', statusPageUrl: 'https://status.mongodb.com' },
   { name: 'Elastic', slug: 'elastic', category: 'cloud-infra', providerType: 'atlassian', statusPageUrl: 'https://status.elastic.co' },
   { name: 'Squarespace', slug: 'squarespace', category: 'cloud-infra', providerType: 'atlassian', statusPageUrl: 'https://status.squarespace.com' },
+  { name: 'Netlify', slug: 'netlify', category: 'cloud-infra', providerType: 'atlassian', statusPageUrl: 'https://netlifystatus.com' },
+  { name: 'Fly.io', slug: 'flyio', category: 'cloud-infra', providerType: 'atlassian', statusPageUrl: 'https://status.flyio.net' },
+  { name: 'Linode', slug: 'linode', category: 'cloud-infra', providerType: 'atlassian', statusPageUrl: 'https://status.linode.com' },
 
   // AI
   { name: 'OpenAI', slug: 'openai', category: 'ai', providerType: 'atlassian', statusPageUrl: 'https://status.openai.com' },
@@ -32,6 +35,8 @@ export const providerConfigs: ProviderConfig[] = [
   { name: 'Segment', slug: 'segment', category: 'dev-tools', providerType: 'atlassian', statusPageUrl: 'https://status.segment.com' },
   { name: 'Amplitude', slug: 'amplitude', category: 'dev-tools', providerType: 'atlassian', statusPageUrl: 'https://status.amplitude.com' },
   { name: '1Password', slug: '1password', category: 'dev-tools', providerType: 'atlassian', statusPageUrl: 'https://status.1password.com' },
+  { name: 'Linear', slug: 'linear', category: 'dev-tools', providerType: 'atlassian', statusPageUrl: 'https://linearstatus.com' },
+  { name: 'Opsgenie', slug: 'opsgenie', category: 'dev-tools', providerType: 'atlassian', statusPageUrl: 'https://opsgenie.status.atlassian.com' },
 
   // Productivity
   { name: 'Figma', slug: 'figma', category: 'productivity', providerType: 'atlassian', statusPageUrl: 'https://status.figma.com' },
@@ -42,14 +47,22 @@ export const providerConfigs: ProviderConfig[] = [
   { name: 'Asana', slug: 'asana', category: 'productivity', providerType: 'atlassian', statusPageUrl: 'https://status.asana.com' },
   { name: 'Monday.com', slug: 'monday', category: 'productivity', providerType: 'atlassian', statusPageUrl: 'https://status.monday.com' },
   { name: 'Typeform', slug: 'typeform', category: 'productivity', providerType: 'atlassian', statusPageUrl: 'https://status.typeform.com' },
+  { name: 'Miro', slug: 'miro', category: 'productivity', providerType: 'atlassian', statusPageUrl: 'https://status.miro.com' },
+  { name: 'Airtable', slug: 'airtable', category: 'productivity', providerType: 'atlassian', statusPageUrl: 'https://status.airtable.com' },
 
   // Comms
   { name: 'Twilio', slug: 'twilio', category: 'comms', providerType: 'atlassian', statusPageUrl: 'https://status.twilio.com' },
   { name: 'SendGrid', slug: 'sendgrid', category: 'comms', providerType: 'atlassian', statusPageUrl: 'https://status.sendgrid.com' },
   { name: 'Discord', slug: 'discord', category: 'comms', providerType: 'atlassian', statusPageUrl: 'https://discordstatus.com' },
   { name: 'Reddit', slug: 'reddit', category: 'comms', providerType: 'atlassian', statusPageUrl: 'https://www.redditstatus.com' },
+  { name: 'Intercom', slug: 'intercom', category: 'comms', providerType: 'atlassian', statusPageUrl: 'https://www.intercomstatus.com' },
+  { name: 'HubSpot', slug: 'hubspot', category: 'comms', providerType: 'atlassian', statusPageUrl: 'https://status.hubspot.com' },
+  { name: 'Mailgun', slug: 'mailgun', category: 'comms', providerType: 'atlassian', statusPageUrl: 'https://status.mailgun.com' },
+  { name: 'Epic Games', slug: 'epicgames', category: 'comms', providerType: 'atlassian', statusPageUrl: 'https://status.epicgames.com' },
+  { name: 'Pinterest', slug: 'pinterest', category: 'comms', providerType: 'atlassian', statusPageUrl: 'https://www.pintereststatus.com' },
 
   // Fintech
   { name: 'Plaid', slug: 'plaid', category: 'fintech', providerType: 'atlassian', statusPageUrl: 'https://status.plaid.com' },
   { name: 'Square', slug: 'square', category: 'fintech', providerType: 'atlassian', statusPageUrl: 'https://issquareup.com' },
+  { name: 'Shopify', slug: 'shopify', category: 'fintech', providerType: 'atlassian', statusPageUrl: 'https://www.shopifystatus.com' },
 ];
