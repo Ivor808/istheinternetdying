@@ -4,6 +4,7 @@ import { getDashboardData } from '@/data/dashboard';
 import { DoomsdayClock } from '../components/DoomsdayClock';
 import { TrendChart } from '../components/TrendChart';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
+import { IndexHistory } from '../components/IndexHistory';
 
 const loadDashboard = createServerFn().handler(async () => {
   return getDashboardData();
@@ -27,6 +28,7 @@ function Dashboard() {
         history={data.history}
         providerHistory={data.providerHistory}
       />
+      <IndexHistory history={data.history} />
       {data.current && (
         <CategoryBreakdown
           categoryScores={data.current.categoryScores}
