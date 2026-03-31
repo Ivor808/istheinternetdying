@@ -35,56 +35,82 @@ export async function syncProviders(): Promise<void> {
   }
 }
 
+async function fetchSingleProvider(
+  provider: { id: number; slug: string; providerType: string; statusPageUrl: string },
+  idx: number,
+  total: number,
+): Promise<{ slug: string; error?: unknown }> {
+  try {
+    console.log(`[sync] ${idx + 1}/${total} ${provider.slug}...`);
+    const plugin = getProvider(provider.providerType);
+
+    const existing = await db
+      .select({ id: incidents.id })
+      .from(incidents)
+      .where(eq(incidents.providerId, provider.id))
+      .limit(1);
+
+    const since = existing.length === 0 ? BACKFILL_START : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const fetched = await plugin.fetchIncidents(
+      provider.statusPageUrl,
+      since
+    );
+    console.log(`[sync] ${provider.slug}: ${fetched.length} incidents`);
+
+    for (const incident of fetched) {
+      await db
+        .insert(incidents)
+        .values({
+          providerId: provider.id,
+          externalId: incident.externalId,
+          title: incident.title,
+          severity: incident.severity,
+          startedAt: incident.startedAt,
+          resolvedAt: incident.resolvedAt,
+          raw: incident.raw,
+        })
+        .onConflictDoUpdate({
+          target: [incidents.providerId, incidents.externalId],
+          set: {
+            title: sql`excluded.title`,
+            severity: sql`excluded.severity`,
+            resolvedAt: sql`excluded.resolved_at`,
+            raw: sql`excluded.raw`,
+          },
+        });
+    }
+    return { slug: provider.slug };
+  } catch (err) {
+    console.error(`[sync] Failed: ${provider.slug}:`, err instanceof Error ? err.message : err);
+    return { slug: provider.slug, error: err };
+  }
+}
+
+const CONCURRENCY = 5;
+
 export async function fetchAndStoreIncidents(): Promise<{ providerErrors: Array<{ slug: string; error: unknown }> }> {
   const allProviders = await db.select().from(providers);
   const providerErrors: Array<{ slug: string; error: unknown }> = [];
 
-  console.log(`[sync] Fetching incidents for ${allProviders.length} providers...`);
-  for (let idx = 0; idx < allProviders.length; idx++) {
-    const provider = allProviders[idx];
-    try {
-      console.log(`[sync] ${idx + 1}/${allProviders.length} ${provider.slug}...`);
-      const plugin = getProvider(provider.providerType);
+  const mem = () => `${Math.round(process.memoryUsage.rss() / 1024 / 1024)}MB`;
+  console.log(`[sync] Fetching incidents for ${allProviders.length} providers (${CONCURRENCY} at a time) [${mem()}]`);
 
-      const existing = await db
-        .select({ id: incidents.id })
-        .from(incidents)
-        .where(eq(incidents.providerId, provider.id))
-        .limit(1);
-
-      const since = existing.length === 0 ? BACKFILL_START : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-      const fetched = await plugin.fetchIncidents(
-        provider.statusPageUrl,
-        since
-      );
-      console.log(`[sync] ${provider.slug}: ${fetched.length} incidents`);
-
-      for (const incident of fetched) {
-        await db
-          .insert(incidents)
-          .values({
-            providerId: provider.id,
-            externalId: incident.externalId,
-            title: incident.title,
-            severity: incident.severity,
-            startedAt: incident.startedAt,
-            resolvedAt: incident.resolvedAt,
-            raw: incident.raw,
-          })
-          .onConflictDoUpdate({
-            target: [incidents.providerId, incidents.externalId],
-            set: {
-              title: sql`excluded.title`,
-              severity: sql`excluded.severity`,
-              resolvedAt: sql`excluded.resolved_at`,
-              raw: sql`excluded.raw`,
-            },
-          });
+  // Process in batches of CONCURRENCY
+  for (let i = 0; i < allProviders.length; i += CONCURRENCY) {
+    const batch = allProviders.slice(i, i + CONCURRENCY);
+    const batchStart = Date.now();
+    const results = await Promise.all(
+      batch.map((provider, batchIdx) =>
+        fetchSingleProvider(provider, i + batchIdx, allProviders.length)
+      )
+    );
+    const elapsed = ((Date.now() - batchStart) / 1000).toFixed(1);
+    console.log(`[sync] Batch ${Math.floor(i / CONCURRENCY) + 1}/${Math.ceil(allProviders.length / CONCURRENCY)} done (${elapsed}s) [${mem()}]`);
+    for (const result of results) {
+      if (result.error) {
+        providerErrors.push({ slug: result.slug, error: result.error });
       }
-    } catch (err) {
-      console.error(`Failed to fetch incidents for provider ${provider.slug}:`, err);
-      providerErrors.push({ slug: provider.slug, error: err });
     }
   }
 

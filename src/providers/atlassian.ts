@@ -84,10 +84,11 @@ export const atlassianProvider: StatusProvider = {
 
     const incidents: ProviderIncident[] = [];
     let page = 1;
+    const MAX_PAGES = 20; // Safety limit: 20 pages × 50 = 1000 incidents max
 
-    while (true) {
+    while (page <= MAX_PAGES) {
       const url = `${statusPageUrl}/api/v2/incidents.json?page=${page}&per_page=50`;
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
 
       if (!response.ok) {
         throw new Error(
