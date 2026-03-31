@@ -66,24 +66,20 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
   );
 
   const chartData = history.map((h) => {
-    const entry: Record<string, number | string> = {
+    const entry: Record<string, number | string | undefined> = {
       date: h.date,
       global: h.globalScore,
     };
 
     for (const cat of activeCategories) {
-      if (h.categoryScores[cat] !== undefined) {
-        entry[cat] = h.categoryScores[cat];
-      }
+      entry[cat] = h.categoryScores[cat] ?? undefined;
     }
 
     for (const slug of activeProviders) {
       const provEntry = providerHistory.find(
         (p) => p.date === h.date && p.slug === slug
       );
-      if (provEntry) {
-        entry[slug] = provEntry.score;
-      }
+      entry[slug] = provEntry?.score ?? undefined;
     }
 
     return entry;
@@ -196,6 +192,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               dot={false}
               strokeDasharray="4 2"
               name={cat}
+              connectNulls={false}
             />
           ))}
           {Array.from(activeProviders).map((slug) => (
@@ -207,6 +204,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               strokeWidth={1.5}
               dot={false}
               name={providerNames[slug] ?? slug}
+              connectNulls={false}
             />
           ))}
         </LineChart>
