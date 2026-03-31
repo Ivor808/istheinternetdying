@@ -22,14 +22,18 @@ serve({
     const url = new URL(request.url);
 
     // Serve static files from public/
-    if (url.pathname === "/favicon.ico") {
+    const PUBLIC_FILES = {
+      "/favicon.ico": { type: "image/x-icon", cache: "public, max-age=86400" },
+      "/robots.txt": { type: "text/plain", cache: "public, max-age=86400" },
+      "/sitemap.xml": { type: "application/xml", cache: "public, max-age=86400" },
+    };
+
+    if (PUBLIC_FILES[url.pathname]) {
       try {
-        const content = await readFile("public/favicon.ico");
+        const { type, cache } = PUBLIC_FILES[url.pathname];
+        const content = await readFile(join("public", url.pathname.slice(1)));
         return new Response(content, {
-          headers: {
-            "Content-Type": "image/x-icon",
-            "Cache-Control": "public, max-age=86400",
-          },
+          headers: { "Content-Type": type, "Cache-Control": cache },
         });
       } catch {
         // Fall through

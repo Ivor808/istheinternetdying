@@ -11,6 +11,16 @@ export const Route = createRootRoute({
         content:
           'Tracking the slow heat death of the internet, one status page at a time. The Death Index aggregates SaaS reliability data into a single score.',
       },
+      // Open Graph
+      { property: 'og:title', content: 'Is The Internet Dying?' },
+      { property: 'og:description', content: 'Tracking the slow heat death of the internet, one status page at a time. The Death Index — a composite reliability score for 50+ major services.' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: 'https://istheinternetdying.com' },
+      { property: 'og:site_name', content: 'Is The Internet Dying?' },
+      // Twitter Card
+      { name: 'twitter:card', content: 'summary' },
+      { name: 'twitter:title', content: 'Is The Internet Dying? — The Death Index' },
+      { name: 'twitter:description', content: 'Tracking the slow heat death of the internet, one status page at a time.' },
     ],
   }),
   component: RootComponent,
