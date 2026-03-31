@@ -5,11 +5,11 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Is The Internet Dying? — The Dying Index' },
+      { title: 'Is The Internet Dying? — The Death Index' },
       {
         name: 'description',
         content:
-          'Tracking the slow heat death of the internet, one status page at a time. The Dying Index aggregates SaaS reliability data into a single score.',
+          'Tracking the slow heat death of the internet, one status page at a time. The Death Index aggregates SaaS reliability data into a single score.',
       },
     ],
   }),

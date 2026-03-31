@@ -42,7 +42,7 @@ function Dashboard() {
             fontFamily: 'monospace',
           }}
         >
-          the <span style={{ color: '#ff4444' }}>dying</span> index
+          the <span style={{ color: '#ff4444' }}>death</span> index
         </p>
         <p
           style={{
@@ -87,7 +87,7 @@ function Dashboard() {
         }}
       >
         <p>
-          istheinternetdying.com is an independent project. The Dying Index is computed
+          istheinternetdying.com is an independent project. The Death Index is computed
           from publicly available status page data and represents an analytical
           interpretation — not an endorsement of or affiliation with any listed provider.
         </p>

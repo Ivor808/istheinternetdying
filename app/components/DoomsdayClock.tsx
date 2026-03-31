@@ -88,7 +88,7 @@ export function DoomsdayClock({ globalScore, previousScore }: DoomsdayClockProps
           {displayMinutes} MINUTES TO MIDNIGHT
         </div>
         <div style={{ fontSize: '1rem', color: '#888', marginTop: '0.5rem' }}>
-          Dying Index: {globalScore}
+          Death Index: {globalScore}
         </div>
         {delta !== null && (
           <div
