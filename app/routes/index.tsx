@@ -39,18 +39,6 @@ function Dashboard() {
         </h1>
         <p
           style={{
-            fontSize: '1.1rem',
-            color: '#888',
-            marginTop: '0.5rem',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            fontFamily: 'monospace',
-          }}
-        >
-          the <span style={{ color: '#ff4444' }}>death</span> index
-        </p>
-        <p
-          style={{
             fontSize: '0.85rem',
             color: '#555',
             marginTop: '0.25rem',
@@ -60,45 +48,6 @@ function Dashboard() {
           tracking the slow heat death of the internet, one status page at a time
         </p>
       </header>
-      <div
-        style={{
-          maxWidth: '600px',
-          margin: '1.5rem auto 0',
-          padding: '0 1rem',
-          textAlign: 'center',
-        }}
-      >
-        <details
-          style={{
-            color: '#777',
-            fontSize: '0.9rem',
-            lineHeight: 1.7,
-          }}
-        >
-          <summary
-            style={{
-              cursor: 'pointer',
-              color: '#888',
-              fontSize: '0.85rem',
-              fontFamily: 'monospace',
-              listStyle: 'none',
-            }}
-          >
-            what is this? ▾
-          </summary>
-          <p style={{ marginTop: '0.75rem' }}>
-            The Death Index is a single number (0–100) representing the overall
-            reliability of the internet's most critical services. We aggregate
-            public incident data from 51 major providers across cloud
-            infrastructure, developer tools, productivity apps, and more — then
-            compute a composite score. The closer to midnight, the worse things
-            are.{' '}
-            <a href="/methodology" style={{ color: '#ff4444', textDecoration: 'none' }}>
-              How it works →
-            </a>
-          </p>
-        </details>
-      </div>
       <DoomsdayClock
         globalScore={selected?.globalScore ?? 100}
         previousScore={prev?.globalScore ?? null}
@@ -145,6 +94,45 @@ function Dashboard() {
           </div>
         </div>
       )}
+      <div
+        style={{
+          maxWidth: '500px',
+          margin: '1.5rem auto 0',
+          padding: '0 1rem',
+          textAlign: 'center',
+        }}
+      >
+        <details
+          style={{
+            color: '#777',
+            fontSize: '0.9rem',
+            lineHeight: 1.7,
+          }}
+        >
+          <summary
+            style={{
+              cursor: 'pointer',
+              color: '#888',
+              fontSize: '0.85rem',
+              fontFamily: 'monospace',
+              listStyle: 'none',
+            }}
+          >
+            what is the death index? ▾
+          </summary>
+          <p style={{ marginTop: '0.75rem' }}>
+            The Death Index is a single number (0–100) representing the overall
+            reliability of the internet's most critical services. We aggregate
+            public incident data from 51 major providers across cloud
+            infrastructure, developer tools, productivity apps, and more — then
+            compute a composite score. The closer to midnight, the worse things
+            are.{' '}
+            <a href="/methodology" style={{ color: '#ff4444', textDecoration: 'none' }}>
+              How it works →
+            </a>
+          </p>
+        </details>
+      </div>
       <TrendChart
         history={data.history}
         providerHistory={data.providerHistory}
