@@ -75,16 +75,41 @@ function Methodology() {
           </p>
         </Section>
 
-        <Section title="Per-provider scoring">
+        <Section title="Per-provider scoring: the severity envelope">
           <p>
             Each provider gets a daily reliability score from 0 to 100, computed
             as a <strong style={{ color: '#ddd' }}>7-day rolling average</strong>.
           </p>
-          <p>For each day in the trailing 7-day window, we start at 100 and deduct points based on incident severity and duration:</p>
+
+          <p>
+            <strong style={{ color: '#ddd' }}>The problem with naive scoring:</strong>{' '}
+            Not all providers report incidents the same way. Some (like Twilio)
+            log every individual carrier route issue as a separate incident — so
+            "SMS delays to 5 carriers" becomes 5 overlapping minor incidents.
+            Others roll the same situation into one. If we simply sum deductions
+            per incident, granular reporters get unfairly penalized.
+          </p>
+
+          <p>
+            <strong style={{ color: '#ddd' }}>Our solution: the severity envelope.</strong>{' '}
+            Instead of counting incidents, we ask: <em>at any given moment
+            during the day, what was the worst thing happening?</em>
+          </p>
+
+          <p>For each day, we build a timeline and find the maximum severity active at each moment:</p>
+
+          <ul style={{ paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
+            <li>5 overlapping minor incidents = same score as 1 minor incident covering the same period</li>
+            <li>A minor + a major happening simultaneously = scored as major for the overlap</li>
+            <li>Two non-overlapping incidents both count fully — they're separate periods of degradation</li>
+          </ul>
+
+          <p>We then deduct from 100 based on how many hours fell into each severity tier:</p>
+
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>Severity</th>
+                <th style={thStyle}>Max severity at that moment</th>
                 <th style={thStyle}>Points deducted per hour</th>
               </tr>
             </thead>
@@ -109,10 +134,19 @@ function Methodology() {
               </tr>
             </tbody>
           </table>
+
           <p>
             Each day floors at 0 (can't go negative). The provider's score is the
             average of the 7 daily scores. This means a bad day drags the score
             down for a week, then naturally rolls off.
+          </p>
+
+          <p style={{ color: '#666', fontSize: '0.85rem' }}>
+            <em>Example: A provider has 3 overlapping minor SMS delivery incidents
+            from 10am–2pm (4 hours), plus 1 major API outage from 1pm–2pm (1 hour).
+            The envelope is: 3 hours minor + 1 hour major. Score: 100 − (3×5 + 1×15) = 70.
+            Without the envelope model, this would score 100 − (4×5 + 4×5 + 4×5 + 1×15) = 25 —
+            a massive over-penalty.</em>
           </p>
         </Section>
 

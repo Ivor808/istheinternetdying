@@ -73,6 +73,72 @@ describe('computeSingleDayScore', () => {
     ];
     expect(computeSingleDayScore(incidents, day)).toBe(40);
   });
+
+  // Severity envelope tests
+  it('overlapping minor incidents score the same as one minor (envelope)', () => {
+    const single = [
+      {
+        severity: 'minor' as const,
+        startedAt: new Date('2026-03-15T10:00:00Z'),
+        resolvedAt: new Date('2026-03-15T14:00:00Z'),
+      },
+    ];
+    const multiple = [
+      {
+        severity: 'minor' as const,
+        startedAt: new Date('2026-03-15T10:00:00Z'),
+        resolvedAt: new Date('2026-03-15T12:00:00Z'),
+      },
+      {
+        severity: 'minor' as const,
+        startedAt: new Date('2026-03-15T10:30:00Z'),
+        resolvedAt: new Date('2026-03-15T13:00:00Z'),
+      },
+      {
+        severity: 'minor' as const,
+        startedAt: new Date('2026-03-15T11:00:00Z'),
+        resolvedAt: new Date('2026-03-15T14:00:00Z'),
+      },
+    ];
+    expect(computeSingleDayScore(single, day)).toBe(
+      computeSingleDayScore(multiple, day)
+    );
+  });
+
+  it('overlapping minor + major uses major for overlap period', () => {
+    const incidents = [
+      {
+        severity: 'minor' as const,
+        startedAt: new Date('2026-03-15T10:00:00Z'),
+        resolvedAt: new Date('2026-03-15T14:00:00Z'), // 4h minor
+      },
+      {
+        severity: 'major' as const,
+        startedAt: new Date('2026-03-15T12:00:00Z'),
+        resolvedAt: new Date('2026-03-15T13:00:00Z'), // 1h major overlap
+      },
+    ];
+    // 10-12: 2h minor = 10, 12-13: 1h major = 15, 13-14: 1h minor = 5 → total 30
+    // 100 - 30 = 70
+    expect(computeSingleDayScore(incidents, day)).toBe(70);
+  });
+
+  it('non-overlapping incidents both count fully', () => {
+    const incidents = [
+      {
+        severity: 'minor' as const,
+        startedAt: new Date('2026-03-15T08:00:00Z'),
+        resolvedAt: new Date('2026-03-15T10:00:00Z'), // 2h
+      },
+      {
+        severity: 'minor' as const,
+        startedAt: new Date('2026-03-15T14:00:00Z'),
+        resolvedAt: new Date('2026-03-15T16:00:00Z'), // 2h
+      },
+    ];
+    // 4h minor total = 20 deduction
+    expect(computeSingleDayScore(incidents, day)).toBe(80);
+  });
 });
 
 describe('computeRollingScore', () => {
