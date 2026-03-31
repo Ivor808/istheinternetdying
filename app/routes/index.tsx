@@ -20,6 +20,29 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
+      <header style={{ textAlign: 'center', padding: '2rem 1rem 0' }}>
+        <h1
+          style={{
+            fontSize: '3rem',
+            fontWeight: 900,
+            letterSpacing: '-0.02em',
+            color: '#e0e0e0',
+            fontFamily: 'monospace',
+          }}
+        >
+          doomsd<span style={{ color: '#ff4444' }}>.</span>ai
+        </h1>
+        <p
+          style={{
+            fontSize: '1rem',
+            color: '#666',
+            marginTop: '0.25rem',
+            fontStyle: 'italic',
+          }}
+        >
+          monitoring the slow heat death of the internet, one status page at a time
+        </p>
+      </header>
       <DoomsdayClock
         globalScore={data.current?.globalScore ?? 100}
         previousScore={data.previous?.globalScore ?? null}
