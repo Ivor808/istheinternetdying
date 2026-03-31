@@ -41,6 +41,7 @@ src/
         cron.ts         # Daily cron endpoint
   providers/            # Status page provider plugins
     types.ts            # Provider interface
+    config.ts           # Provider list (source of truth)
     atlassian.ts        # Atlassian Statuspage implementation
     registry.ts         # Provider registry
   index/                # Score calculation
@@ -158,7 +159,7 @@ A broad set across categories to make the index meaningful from day one:
 - **Comms:** Twilio, SendGrid, Discord, Slack
 - **Fintech:** Stripe, Plaid, Square
 
-This list is seeded in the database. Adding a provider is a config change (add a row to `providers`), not a code change, as long as it uses a supported plugin type.
+This list lives in a `src/providers/config.ts` file as the source of truth. The cron job upserts it into the `providers` table on each run, so adding/removing a provider is just editing the config file — no migrations or manual DB work. The list is version-controlled and reviewable in PRs.
 
 ## Score Calculation
 
