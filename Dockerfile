@@ -11,6 +11,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY --from=build /app/dist dist
 COPY server.js .
+COPY public public
 COPY drizzle drizzle
 COPY drizzle.config.ts .
 COPY src/db src/db

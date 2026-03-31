@@ -21,6 +21,7 @@ function RootComponent() {
     <html lang="en">
       <head>
         <HeadContent />
+        <link rel="icon" href="/favicon.ico" />
         <script defer src="https://cloud.umami.is/script.js" data-website-id="60cd07b4-eb37-4b84-882a-d50f28544bd1" />
         <style
           dangerouslySetInnerHTML={{

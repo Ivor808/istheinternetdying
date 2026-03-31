@@ -21,6 +21,21 @@ serve({
   async fetch(request) {
     const url = new URL(request.url);
 
+    // Serve static files from public/
+    if (url.pathname === "/favicon.ico") {
+      try {
+        const content = await readFile("public/favicon.ico");
+        return new Response(content, {
+          headers: {
+            "Content-Type": "image/x-icon",
+            "Cache-Control": "public, max-age=86400",
+          },
+        });
+      } catch {
+        // Fall through
+      }
+    }
+
     // Serve static client assets from dist/client/
     if (url.pathname.startsWith("/assets/")) {
       try {
