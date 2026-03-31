@@ -28,8 +28,8 @@ echo "=== Response (HTTP $HTTP_CODE) ==="
 cat /tmp/response.txt 2>/dev/null
 echo ""
 
-if [ "$HTTP_CODE" = "200" ]; then
-  echo "=== Sync completed successfully ==="
+if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ]; then
+  echo "=== Sync triggered successfully ==="
 else
   echo "=== Sync failed with HTTP $HTTP_CODE ==="
 fi
