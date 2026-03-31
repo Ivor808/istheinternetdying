@@ -1,6 +1,6 @@
 import { db } from '../db/client';
 import { dailyIndex, dailyScores, providers } from '../db/schema';
-import { desc, eq, sql, inArray } from 'drizzle-orm';
+import { desc, eq, inArray } from 'drizzle-orm';
 
 export interface DashboardData {
   current: {
@@ -70,7 +70,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     .from(providers)
     .where(inArray(providers.slug, NOTABLE_PROVIDERS));
 
-  let providerHistory: DashboardData['providerHistory'] = [];
+  const providerHistory: DashboardData['providerHistory'] = [];
   for (const p of notableProviderRows) {
     const scores = await db
       .select({ date: dailyScores.date, score: dailyScores.score })
