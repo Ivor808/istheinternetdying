@@ -120,8 +120,11 @@ export function TrendChart({ history, providerHistory, cveCounts }: TrendChartPr
         .filter((e): e is typeof e & { snappedDate: string } => e.snappedDate !== null)
     : [];
 
-  // Build a lookup for CVE data by date
-  const cveByDate = new Map(cveCounts.map((c) => [c.date, c.count]));
+  // Build a lookup for CVE data — spread monthly value across all days in that month
+  const cveByMonth = new Map(cveCounts.map((c) => {
+    const month = c.date.slice(0, 7); // "2024-01"
+    return [month, c.count];
+  }));
 
   const chartData = history.map((h) => {
     const entry: Record<string, number | string | undefined> = {
@@ -141,7 +144,8 @@ export function TrendChart({ history, providerHistory, cveCounts }: TrendChartPr
     }
 
     if (showCVEs) {
-      entry.cves = cveByDate.get(h.date) ?? undefined;
+      const month = h.date.slice(0, 7);
+      entry.cves = cveByMonth.get(month) ?? undefined;
     }
 
     return entry;
@@ -204,7 +208,8 @@ export function TrendChart({ history, providerHistory, cveCounts }: TrendChartPr
                 stroke="#f59e0b"
                 tick={{ fontSize: 11 }}
                 tickFormatter={(v: number) => `${(v / 1000).toFixed(1)}k`}
-                label={{ value: 'CVEs/month', angle: 90, position: 'insideRight', fill: '#f59e0b', fontSize: 11, offset: 10 }}
+                reversed
+                label={{ value: 'CVEs/month ▼ more = worse', angle: 90, position: 'insideRight', fill: '#f59e0b', fontSize: 10, offset: 10 }}
               />
             )}
             <Tooltip
