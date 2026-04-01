@@ -336,83 +336,69 @@ export function TrendChart({ history, providerHistory, cveCounts }: TrendChartPr
       </div>
 
       {/* Controls below chart */}
-      <div style={{ marginTop: '1rem' }}>
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-            alignItems: 'center',
-          }}
-        >
-          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-            categories
-          </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+        <ControlRow label="categories">
           {allCategories.map((cat) => (
             <button
               key={cat}
               onClick={() => toggleCategory(cat)}
-              style={pillStyle(
-                activeCategories.has(cat),
-                CATEGORY_COLORS[cat] ?? '#666'
-              )}
+              style={pillStyle(activeCategories.has(cat), CATEGORY_COLORS[cat] ?? '#666')}
             >
               {cat}
             </button>
           ))}
-          <span style={{ color: '#333', padding: '0 0.25rem' }}>|</span>
-          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-            providers
-          </span>
+        </ControlRow>
+        <ControlRow label="providers">
           {allProviders.map((slug) => (
             <button
               key={slug}
               onClick={() => toggleProvider(slug)}
-              style={pillStyle(
-                activeProviders.has(slug),
-                PROVIDER_COLORS[slug] ?? '#666'
-              )}
+              style={pillStyle(activeProviders.has(slug), PROVIDER_COLORS[slug] ?? '#666')}
             >
               {providerNames[slug] ?? slug}
             </button>
           ))}
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-            alignItems: 'center',
-            marginTop: '0.5rem',
-          }}
-        >
-          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-            ai events
-          </span>
+        </ControlRow>
+        <ControlRow label="ai events">
           {EVENT_CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => toggleEventCategory(cat)}
-              style={pillStyle(
-                activeEventCategories.has(cat),
-                EVENT_CATEGORY_COLORS[cat]
-              )}
+              style={pillStyle(activeEventCategories.has(cat), EVENT_CATEGORY_COLORS[cat])}
             >
               {EVENT_CATEGORY_LABELS[cat]}
             </button>
           ))}
-          <span style={{ color: '#333', padding: '0 0.25rem' }}>|</span>
-          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-            data
-          </span>
+        </ControlRow>
+        <ControlRow label="data">
           <button
             onClick={() => setShowCVEs((v) => !v)}
             style={pillStyle(showCVEs, '#f59e0b')}
           >
             CVEs/month
           </button>
-        </div>
+        </ControlRow>
       </div>
+    </div>
+  );
+}
+
+function ControlRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+      <span
+        style={{
+          color: '#555',
+          fontSize: '0.7rem',
+          fontFamily: 'monospace',
+          textTransform: 'uppercase',
+          width: '5.5rem',
+          flexShrink: 0,
+        }}
+      >
+        {label}
+      </span>
+      {children}
     </div>
   );
 }
