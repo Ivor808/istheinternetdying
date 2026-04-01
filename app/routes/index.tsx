@@ -206,14 +206,15 @@ function Dashboard() {
           >
             methodology
           </a>
-          {' · '}
+        </p>
+        <p style={{ marginTop: '0.5rem' }}>
           <a
             href="https://ko-fi.com/ivorz"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: '#888', textDecoration: 'none' }}
           >
-            support this project
+            <span style={{ color: '#ff4444' }}>{'\u2764'}</span> support this project
           </a>
         </p>
       </footer>
