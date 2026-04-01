@@ -30,9 +30,15 @@ interface ProviderHistoryEntry {
   score: number;
 }
 
+interface CVECountEntry {
+  date: string;
+  count: number;
+}
+
 interface TrendChartProps {
   history: HistoryEntry[];
   providerHistory: ProviderHistoryEntry[];
+  cveCounts: CVECountEntry[];
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -57,7 +63,7 @@ const PROVIDER_COLORS: Record<string, string> = {
 
 const EVENT_CATEGORIES: AIEvent['category'][] = ['model', 'tool', 'industry'];
 
-export function TrendChart({ history, providerHistory }: TrendChartProps) {
+export function TrendChart({ history, providerHistory, cveCounts }: TrendChartProps) {
   const [activeCategories, setActiveCategories] = useState<Set<string>>(
     new Set()
   );
@@ -68,6 +74,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
     Set<AIEvent['category']>
   >(new Set());
   const [hoveredEvent, setHoveredEvent] = useState<AIEvent | null>(null);
+  const [showCVEs, setShowCVEs] = useState(false);
 
   const allCategories = Array.from(
     new Set(history.flatMap((h) => Object.keys(h.categoryScores)))
@@ -113,6 +120,9 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
         .filter((e): e is typeof e & { snappedDate: string } => e.snappedDate !== null)
     : [];
 
+  // Build a lookup for CVE data by date
+  const cveByDate = new Map(cveCounts.map((c) => [c.date, c.count]));
+
   const chartData = history.map((h) => {
     const entry: Record<string, number | string | undefined> = {
       date: h.date,
@@ -128,6 +138,10 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
         (p) => p.date === h.date && p.slug === slug
       );
       entry[slug] = provEntry?.score ?? undefined;
+    }
+
+    if (showCVEs) {
+      entry.cves = cveByDate.get(h.date) ?? undefined;
     }
 
     return entry;
@@ -182,18 +196,30 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               interval="preserveStartEnd"
               minTickGap={50}
             />
-            <YAxis domain={[0, 100]} stroke="#666" tick={{ fontSize: 12 }} />
+            <YAxis yAxisId="left" domain={[0, 100]} stroke="#666" tick={{ fontSize: 12 }} />
+            {showCVEs && (
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                stroke="#f59e0b"
+                tick={{ fontSize: 11 }}
+                tickFormatter={(v: number) => `${(v / 1000).toFixed(1)}k`}
+                label={{ value: 'CVEs/month', angle: 90, position: 'insideRight', fill: '#f59e0b', fontSize: 11, offset: 10 }}
+              />
+            )}
             <Tooltip
               contentStyle={{ background: '#1a1a1a', border: '1px solid #333' }}
             />
             {/* AI Era line — always shown */}
             <ReferenceLine
+              yAxisId="left"
               x="2026-01-01"
               stroke="#ff4444"
               strokeDasharray="6 3"
               strokeOpacity={0.4}
             />
             <ReferenceDot
+              yAxisId="left"
               x="2026-01-01"
               y={98}
               r={0}
@@ -204,6 +230,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               const isHovered = hoveredEvent?.date === event.date && hoveredEvent?.label === event.label;
               return (
                 <ReferenceLine
+                  yAxisId="left"
                   key={`line-${event.snappedDate}-${i}`}
                   x={event.snappedDate}
                   stroke={EVENT_CATEGORY_COLORS[event.category]}
@@ -216,6 +243,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
             {/* Event dot markers at top of chart */}
             {visibleEvents.map((event, i) => (
               <ReferenceDot
+                yAxisId="left"
                 key={`dot-${event.snappedDate}-${i}`}
                 x={event.snappedDate}
                 y={97}
@@ -229,6 +257,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               />
             ))}
             <Line
+              yAxisId="left"
               type="monotone"
               dataKey="global"
               stroke="#e0e0e0"
@@ -236,8 +265,22 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               dot={false}
               name="Global Index"
             />
+            {showCVEs && (
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="cves"
+                stroke="#f59e0b"
+                strokeWidth={2}
+                dot={{ r: 3, fill: '#f59e0b' }}
+                name="CVEs/month"
+                connectNulls={false}
+                strokeDasharray="6 3"
+              />
+            )}
             {Array.from(activeCategories).map((cat) => (
               <Line
+                yAxisId="left"
                 key={cat}
                 type="monotone"
                 dataKey={cat}
@@ -251,6 +294,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
             ))}
             {Array.from(activeProviders).map((slug) => (
               <Line
+                yAxisId="left"
                 key={slug}
                 type="monotone"
                 dataKey={slug}
@@ -357,6 +401,16 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               {EVENT_CATEGORY_LABELS[cat]}
             </button>
           ))}
+          <span style={{ color: '#333', padding: '0 0.25rem' }}>|</span>
+          <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+            data
+          </span>
+          <button
+            onClick={() => setShowCVEs((v) => !v)}
+            style={pillStyle(showCVEs, '#f59e0b')}
+          >
+            CVEs/month
+          </button>
         </div>
       </div>
     </div>

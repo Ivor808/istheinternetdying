@@ -1,5 +1,5 @@
 import { db } from '../db/client';
-import { dailyIndex, dailyScores, providers } from '../db/schema';
+import { dailyIndex, dailyScores, providers, monthlyCves } from '../db/schema';
 import { desc, eq, inArray } from 'drizzle-orm';
 
 export interface DashboardData {
@@ -22,6 +22,10 @@ export interface DashboardData {
     slug: string;
     name: string;
     score: number;
+  }>;
+  cveCounts: Array<{
+    date: string;
+    count: number;
   }>;
 }
 
@@ -88,6 +92,11 @@ export async function getDashboardData(): Promise<DashboardData> {
     }
   }
 
+  const cveRows = await db
+    .select({ date: monthlyCves.date, count: monthlyCves.count })
+    .from(monthlyCves)
+    .orderBy(monthlyCves.date);
+
   return {
     current: current
       ? {
@@ -108,5 +117,6 @@ export async function getDashboardData(): Promise<DashboardData> {
       categoryScores: h.categoryScores,
     })),
     providerHistory,
+    cveCounts: cveRows,
   };
 }

@@ -8,6 +8,7 @@ import {
   computeGlobalIndex,
 } from '../scoring/aggregation';
 import { eq, and, or, sql, gte, lte, isNull } from 'drizzle-orm';
+import { syncCVECounts } from './cve-sync';
 
 const BACKFILL_START = new Date('2024-01-01T00:00:00Z');
 const DAILY_START = new Date('2026-01-01T00:00:00Z');
@@ -266,9 +267,11 @@ export async function runDailySync(): Promise<{
         console.log(`  ${i + 1}/${dates.length} — ${dates[i].toISOString().split('T')[0]} → index ${lastResult.globalScore}`);
       }
     }
+    await syncCVECounts();
     return { ...lastResult, backfilled: true };
   }
 
   const result = await computeAndStoreScores(today);
+  await syncCVECounts();
   return { ...result, backfilled: false };
 }

@@ -8,6 +8,13 @@
       "when": 1774930127292,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775006952443,
+      "tag": "0001_add-monthly-cves",
+      "breakpoints": true
     }
   ]
 }

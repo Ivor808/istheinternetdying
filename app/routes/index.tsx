@@ -136,6 +136,7 @@ function Dashboard() {
       <TrendChart
         history={data.history}
         providerHistory={data.providerHistory}
+        cveCounts={data.cveCounts}
       />
       <IndexHistory history={data.history} />
       {data.current && (

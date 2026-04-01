@@ -58,6 +58,12 @@ export const dailyScores = pgTable(
   ]
 );
 
+export const monthlyCves = pgTable('monthly_cves', {
+  id: serial('id').primaryKey(),
+  date: date('date').notNull().unique(), // first of month, e.g. 2024-01-01
+  count: integer('count').notNull(),
+});
+
 export const dailyIndex = pgTable('daily_index', {
   id: serial('id').primaryKey(),
   date: date('date').notNull().unique(),
