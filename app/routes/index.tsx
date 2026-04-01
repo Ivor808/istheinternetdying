@@ -6,6 +6,7 @@ import { DoomsdayClock } from '../components/DoomsdayClock';
 import { TrendChart } from '../components/TrendChart';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
 import { IndexHistory } from '../components/IndexHistory';
+import { CVEChart } from '../components/CVEChart';
 
 const loadDashboard = createServerFn().handler(async () => {
   return getDashboardData();
@@ -156,8 +157,8 @@ function Dashboard() {
       <TrendChart
         history={data.history}
         providerHistory={data.providerHistory}
-        cveCounts={data.cveCounts}
       />
+      <CVEChart cveCounts={data.cveCounts} />
       <IndexHistory history={data.history} />
       {data.current && (
         <CategoryBreakdown
