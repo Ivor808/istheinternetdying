@@ -206,6 +206,15 @@ function Dashboard() {
           >
             methodology
           </a>
+          {' · '}
+          <a
+            href="https://ko-fi.com/ivorz"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#888', textDecoration: 'none' }}
+          >
+            support this project
+          </a>
         </p>
       </footer>
     </div>
