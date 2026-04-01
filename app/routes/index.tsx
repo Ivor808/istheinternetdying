@@ -169,6 +169,23 @@ function Dashboard() {
         <p style={{ marginTop: '0.5rem' }}>
           Not financial, operational, or professional advice. Just vibes and math.
         </p>
+        <p style={{ marginTop: '0.75rem' }}>
+          <a
+            href="https://github.com/Ivor808/istheinternetdying"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#888', textDecoration: 'none' }}
+          >
+            open source — contribute on github
+          </a>
+          {' · '}
+          <a
+            href="/methodology"
+            style={{ color: '#888', textDecoration: 'none' }}
+          >
+            methodology
+          </a>
+        </p>
       </footer>
     </div>
   );
