@@ -182,7 +182,7 @@ export function TrendChart({ history, providerHistory }: TrendChartProps) {
               interval="preserveStartEnd"
               minTickGap={50}
             />
-            <YAxis domain={[0, 100]} stroke="#666" tick={{ fontSize: 12 }} />
+            <YAxis domain={[50, 100]} stroke="#666" tick={{ fontSize: 12 }} />
             <Tooltip
               contentStyle={{ background: '#1a1a1a', border: '1px solid #333' }}
             />
