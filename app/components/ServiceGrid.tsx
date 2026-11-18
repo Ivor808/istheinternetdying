@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ServiceGrid as Grid } from '@/data/service-grid';
+import { NORMAL_FLOOR, dayLoss, lossLevel, normalCeiling, type ServiceGrid as Grid } from '@/data/service-grid';
 import { formatDate } from '@/data/chart';
 import { CATEGORY_NAMES, CATEGORY_ORDER } from '@/data/categories';
 
@@ -13,26 +13,16 @@ const BAR_GAP = 8;
 const AXIS_H = 18;
 
 const EMPTY = '#16161d';
-// Each step is clearly lighter than the last, so severity reads without relying on hue
-export const GRID_SCALE = ['#4d3338', '#8f3b46', '#d6434f', '#ffa08a'];
+// Some loss, but an ordinary day for this row
+export const GRID_NORMAL = '#34343f';
+// Worse than usual; each step is clearly lighter than the last, so it reads without relying on hue
+export const GRID_SCALE = ['#5c3138', '#8f3b46', '#d6434f', '#ffa08a'];
+const LEVEL_COLORS = [EMPTY, GRID_NORMAL, ...GRID_SCALE];
 
-// Single service: by that day's score
-function serviceColor(score: number, hours: number): string {
-  if (hours === 0) return EMPTY;
-  if (score >= 95) return GRID_SCALE[0];
-  if (score >= 85) return GRID_SCALE[1];
-  if (score >= 70) return GRID_SCALE[2];
-  return GRID_SCALE[3];
-}
-
-// Category: by the share of its services hit that day
-function categoryColor(hit: number, total: number): string {
-  if (hit === 0) return EMPTY;
-  const share = hit / total;
-  if (share <= 0.1) return GRID_SCALE[0];
-  if (share <= 0.25) return GRID_SCALE[1];
-  if (share <= 0.5) return GRID_SCALE[2];
-  return GRID_SCALE[3];
+// Colour each day of a row by its loss against the row's own normal over the visible days
+function rowColors(losses: number[], from: number, floor: number): (day: number) => string {
+  const ceiling = normalCeiling(losses.slice(from), floor);
+  return (d) => LEVEL_COLORS[lossLevel(losses[d], ceiling)];
 }
 
 function useIsMobile(): boolean {
@@ -90,7 +80,7 @@ export function ServiceGrid({ grid }: { grid: Grid }) {
           label: s.name,
           total: sumHours(s.hours),
           open: s.openNow,
-          color: (d) => serviceColor(s.scores[d], s.hours[d]),
+          color: rowColors(s.scores.map((score) => 100 - score), offset, NORMAL_FLOOR.service),
           describe: (d) => (s.hours[d] > 0 ? `${s.hours[d]}h ${SEVERITY[s.worst[d]]}` : 'no incidents'),
         });
       }
@@ -105,7 +95,11 @@ export function ServiceGrid({ grid }: { grid: Grid }) {
           total: services.reduce((a, s) => a + sumHours(s.hours), 0),
           open: services.some((s) => s.openNow),
           category: cat,
-          color: (d) => categoryColor(hitOn(d), services.length),
+          color: rowColors(
+            grid.days.map((_, d) => dayLoss(services.map((s) => s.scores[d]))),
+            offset,
+            NORMAL_FLOOR.category
+          ),
           describe: (d) => (hitOn(d) > 0 ? `${hitOn(d)}/${services.length} services · ${hoursOn(d)}h` : 'no incidents'),
         });
       }

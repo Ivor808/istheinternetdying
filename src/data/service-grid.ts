@@ -75,3 +75,33 @@ export function buildServiceGrid(
 
   return { generatedAt: now.toISOString(), syncedAt: syncedAt?.toISOString() ?? null, days, services };
 }
+
+// Grid colouring: how many points a row lost that day, compared with what's normal for that row.
+// Every day has some minor incident somewhere, so "any incident" would paint everything red;
+// red is kept for days clearly worse than the row's usual.
+
+// A row's normal ceiling never drops below these, so a usually-quiet row doesn't go red over a blip
+export const NORMAL_FLOOR = { category: 3, service: 10 };
+
+// Points lost that day (100 − score), averaged over the services in the row
+export function dayLoss(scores: number[]): number {
+  if (scores.length === 0) return 0;
+  return scores.reduce((a, s) => a + (100 - s), 0) / scores.length;
+}
+
+// Upper edge of "normal" for a row: its 75th percentile day, or the floor
+export function normalCeiling(losses: number[], floor: number): number {
+  if (losses.length === 0) return floor;
+  const sorted = [...losses].sort((a, b) => a - b);
+  return Math.max(floor, sorted[Math.floor((sorted.length - 1) * 0.75)]);
+}
+
+// 0 = no loss, 1 = normal, 2..5 = worse than usual (each step about double the last)
+export function lossLevel(loss: number, ceiling: number): number {
+  if (loss <= 0) return 0;
+  if (loss <= ceiling) return 1;
+  if (loss <= ceiling * 2) return 2;
+  if (loss <= ceiling * 4) return 3;
+  if (loss <= ceiling * 8) return 4;
+  return 5;
+}

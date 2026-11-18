@@ -42,7 +42,7 @@ import {
 import { EVENTS, EVENT_CATEGORY_COLORS, eventId, type TimelineEvent } from '@/data/events';
 import { CATEGORY_COLORS, CATEGORY_NAMES, CATEGORY_ORDER } from '@/data/categories';
 import { EventLayer } from '../components/EventLayer';
-import { GRID_SCALE, ServiceGrid } from '../components/ServiceGrid';
+import { GRID_NORMAL, GRID_SCALE, ServiceGrid } from '../components/ServiceGrid';
 import { DeathCard } from '../components/DeathCard';
 import { ShareMenu } from '../components/ShareMenu';
 import { Logo } from '../components/Logo';
@@ -479,10 +479,11 @@ function Dashboard() {
           <ServiceGrid grid={grid} />
         </div>
         <div className="ui-legend">
-          <span>none</span>
           <i style={{ background: '#16161d' }} />
+          <i style={{ background: GRID_NORMAL }} />
+          <span>normal</span>
           {GRID_SCALE.map((c) => <i key={c} style={{ background: c }} />)}
-          <span>severe</span>
+          <span>worse than usual</span>
           <span style={{ marginLeft: '1rem' }}>
             <i style={{ background: 'none', border: `1.2px solid ${C.bad}` }} /> open now{liveOk && ' (live)'}
           </span>
