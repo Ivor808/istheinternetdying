@@ -3,6 +3,7 @@ interface ProviderScore {
   score: number;
 }
 
+// Unrounded on purpose: rounding happens only at display
 export function computeCategoryScores(
   providerScores: ProviderScore[]
 ): Record<string, number> {
@@ -17,7 +18,7 @@ export function computeCategoryScores(
   const result: Record<string, number> = {};
   for (const [category, scores] of categoryGroups) {
     const avg = scores.reduce((sum, s) => sum + s, 0) / scores.length;
-    result[category] = Math.round(avg);
+    result[category] = avg;
   }
 
   return result;
@@ -29,5 +30,5 @@ export function computeGlobalIndex(
   const values = Object.values(categoryScores);
   if (values.length === 0) return 100;
   const avg = values.reduce((sum, s) => sum + s, 0) / values.length;
-  return Math.round(avg);
+  return avg;
 }

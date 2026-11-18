@@ -19,6 +19,15 @@ describe('computeCategoryScores', () => {
     expect(result['ai']).toBe(85);
   });
 
+  it('does not round category averages', () => {
+    const result = computeCategoryScores([
+      { category: 'ai', score: 90 },
+      { category: 'ai', score: 85 },
+      { category: 'ai', score: 85 },
+    ]);
+    expect(result['ai']).toBeCloseTo(86.6667);
+  });
+
   it('handles a single provider in a category', () => {
     const providerScores = [{ category: 'fintech', score: 95 }];
 
@@ -40,13 +49,13 @@ describe('computeGlobalIndex', () => {
     expect(result).toBe(90);
   });
 
-  it('rounds to nearest integer', () => {
+  it('keeps full precision', () => {
     const categoryScores = {
       'cloud-infra': 91,
       ai: 82,
     };
 
     const result = computeGlobalIndex(categoryScores);
-    expect(result).toBe(87);
+    expect(result).toBe(86.5);
   });
 });

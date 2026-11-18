@@ -40,8 +40,10 @@ export function CategoryBreakdown({
         }}
       >
         {categories.map(([category, score]) => {
+          // Scores are unrounded; show and compare integers
+          const shown = Math.round(score);
           const prevScore = previousCategoryScores?.[category] ?? null;
-          const delta = prevScore !== null ? score - prevScore : null;
+          const delta = prevScore !== null ? shown - Math.round(prevScore) : null;
 
           return (
             <div
@@ -67,22 +69,24 @@ export function CategoryBreakdown({
                 style={{
                   fontSize: '2rem',
                   fontWeight: 'bold',
-                  color: scoreColor(score),
+                  color: scoreColor(shown),
                   marginTop: '0.25rem',
                   fontFamily: 'monospace',
                 }}
               >
-                {score}
+                {shown}
               </div>
               {delta !== null && (
                 <div
                   style={{
                     fontSize: '0.8rem',
-                    color: delta >= 0 ? '#4a4' : '#f44',
+                    color: delta === 0 ? '#888' : delta > 0 ? '#4a4' : '#f44',
                     marginTop: '0.25rem',
                   }}
                 >
-                  {delta >= 0 ? '\u25B2' : '\u25BC'} {Math.abs(delta)} from last week
+                  {delta === 0
+                    ? 'no change from last week'
+                    : `${delta > 0 ? '\u25B2' : '\u25BC'} ${Math.abs(delta)} from last week`}
                 </div>
               )}
             </div>

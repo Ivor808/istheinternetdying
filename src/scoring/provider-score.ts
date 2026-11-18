@@ -32,6 +32,18 @@ const SEVERITY_POINTS_PER_HOUR: Record<number, number> = {
 };
 
 /**
+ * Lowest score a day can reach, by the worst severity seen that day.
+ * Without this, 20 hours of "minor" (often an incident left in monitoring)
+ * would score the same 0 as a day-long critical outage.
+ */
+export const SEVERITY_FLOOR: Record<number, number> = {
+  0: 100, // nothing happened
+  1: 70,  // minor
+  2: 40,  // major
+  3: 0,   // critical
+};
+
+/**
  * Severity Envelope scoring model.
  *
  * Instead of summing deductions per incident (which penalizes granular
@@ -45,10 +57,32 @@ export function computeSingleDayScore(
   incidents: IncidentWindow[],
   day: Date
 ): number {
+  return computeDayStats(incidents, day).score;
+}
+
+export interface DayStats {
+  score: number;
+  // Hours with at least one incident active
+  hours: number;
+  // Highest severity rank seen: 0 none, 1 minor, 2 major, 3 critical
+  worst: number;
+}
+
+/**
+ * Same envelope as computeSingleDayScore, plus how long the provider was
+ * degraded. `until` cuts off still-open incidents (e.g. "now" for today);
+ * without it they run to the end of the day, as the score always has.
+ */
+export function computeDayStats(
+  incidents: IncidentWindow[],
+  day: Date,
+  until?: Date
+): DayStats {
   const dayStart = new Date(
     Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate())
   );
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+  const openEnd = until && until < dayEnd ? until : dayEnd;
 
   // Collect all time boundaries where severity might change
   const edges = new Set<number>();
@@ -67,7 +101,7 @@ export function computeSingleDayScore(
 
     // Cap incident duration to prevent stale entries from tanking scores forever
     const maxDuration = MAX_DURATION_MS[rank] ?? MAX_DURATION_MS[1];
-    const rawEnd = incident.resolvedAt ?? dayEnd;
+    const rawEnd = incident.resolvedAt ?? openEnd;
     const cappedEnd = new Date(
       Math.min(rawEnd.getTime(), incident.startedAt.getTime() + maxDuration)
     );
@@ -82,12 +116,14 @@ export function computeSingleDayScore(
     edges.add(incEnd);
   }
 
-  if (dayIncidents.length === 0) return 100;
+  if (dayIncidents.length === 0) return { score: 100, hours: 0, worst: 0 };
 
   // Sort edges chronologically
   const sortedEdges = Array.from(edges).sort((a, b) => a - b);
 
   let deduction = 0;
+  let hours = 0;
+  let worst = 0;
 
   // Walk through each interval between consecutive edges
   for (let i = 0; i < sortedEdges.length - 1; i++) {
@@ -105,12 +141,17 @@ export function computeSingleDayScore(
 
     if (maxRank > 0) {
       deduction += (SEVERITY_POINTS_PER_HOUR[maxRank] ?? 0) * intervalHours;
+      hours += intervalHours;
+      worst = Math.max(worst, maxRank);
     }
   }
 
-  return Math.max(0, Math.round(100 - deduction));
+  // Unrounded: scores keep full precision until display
+  return { score: Math.max(SEVERITY_FLOOR[worst] ?? 0, 100 - deduction), hours, worst };
 }
 
+// Mean of the 7 day scores ending on `date` (inclusive). Callers score a date
+// once it has ended, so every day in the window is complete.
 export function computeRollingScore(
   incidents: IncidentWindow[],
   date: Date
@@ -124,5 +165,5 @@ export function computeRollingScore(
     total += computeSingleDayScore(incidents, day);
   }
 
-  return Math.round(total / 7);
+  return total / 7;
 }

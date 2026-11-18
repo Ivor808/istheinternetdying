@@ -1,14 +1,16 @@
 # is the internet dying?
 
+[![Death Index](https://istheinternetdying.com/badge.svg)](https://istheinternetdying.com)
+
 **The Death Index** — tracking the slow heat death of the internet, one status page at a time.
 
-A composite reliability score (0–100) for 50+ major SaaS providers, updated daily. As AI adoption accelerates across every product category, does overall service reliability degrade? The Death Index tracks the answer.
+A composite reliability score (0–100) for 50 major SaaS providers, updated daily. As AI adoption accelerates across every product category, does overall service reliability degrade? The Death Index tracks the answer.
 
 **Live at [istheinternetdying.com](https://istheinternetdying.com)**
 
 ## What it does
 
-- Ingests incident data from public Atlassian Statuspage APIs across 50+ providers
+- Ingests incident data from public Atlassian Statuspage APIs across 50 providers
 - Computes per-provider reliability scores using a severity envelope model (7-day rolling window)
 - Aggregates into category scores and a single global Death Index
 - Visualizes the trend with a Doomsday Clock, historical chart, CVE overlay, and AI event markers
@@ -56,6 +58,7 @@ npm test
 | `./doom wipe` | Drop all tables and re-migrate |
 | `./doom sync` | Trigger daily data sync |
 | `./doom dev` | Start dev server |
+| `./doom mock` | Start dev server with mock data (no database or Docker needed) |
 | `./doom status` | Show Supabase status |
 | `./doom db` | Open psql shell |
 
@@ -65,7 +68,7 @@ Contributions welcome! Here are the areas where help is most needed:
 
 ### Add more providers
 
-We currently track 50+ providers that use Atlassian Statuspage. To add a new one:
+We currently track 50 providers that use Atlassian Statuspage. To add a new one:
 
 1. Verify the provider has a public Atlassian Statuspage (`{url}/api/v2/incidents.json` returns JSON)
 2. Add an entry to `src/providers/config.ts`
@@ -75,7 +78,7 @@ Providers that use custom status pages (AWS, Slack, Stripe, etc.) need custom pa
 
 ### Improve historical data
 
-Some providers have limited history on their status pages. If you know of alternative public data sources for incident history, open an issue.
+Statuspage feeds only return the ~50 most recent incidents per provider, so the index only has history from when collection started (days are published once at least 80% of providers have complete data for the 7-day window). If you know of alternative public data sources for incident history, open an issue.
 
 ### Add data sources
 

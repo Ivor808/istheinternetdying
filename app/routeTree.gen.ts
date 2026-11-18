@@ -9,12 +9,54 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as V2RouteImport } from './routes/v2'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as MethodologyRouteImport } from './routes/methodology'
+import { Route as EmbedRouteImport } from './routes/embed'
+import { Route as BadgeDotsvgRouteImport } from './routes/badge[.]svg'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DayDateRouteImport } from './routes/day.$date'
+import { Route as CardFileRouteImport } from './routes/card.$file'
 import { Route as ApiCronRouteImport } from './routes/api/cron'
 
+const V2Route = V2RouteImport.update({
+  id: '/v2',
+  path: '/v2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MethodologyRoute = MethodologyRouteImport.update({
+  id: '/methodology',
+  path: '/methodology',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmbedRoute = EmbedRouteImport.update({
+  id: '/embed',
+  path: '/embed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BadgeDotsvgRoute = BadgeDotsvgRouteImport.update({
+  id: '/badge.svg',
+  path: '/badge.svg',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DayDateRoute = DayDateRouteImport.update({
+  id: '/day/$date',
+  path: '/day/$date',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CardFileRoute = CardFileRouteImport.update({
+  id: '/card/$file',
+  path: '/card/$file',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronRoute = ApiCronRouteImport.update({
@@ -25,37 +67,142 @@ const ApiCronRoute = ApiCronRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/badge.svg': typeof BadgeDotsvgRoute
+  '/embed': typeof EmbedRoute
+  '/methodology': typeof MethodologyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/v2': typeof V2Route
   '/api/cron': typeof ApiCronRoute
+  '/card/$file': typeof CardFileRoute
+  '/day/$date': typeof DayDateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/badge.svg': typeof BadgeDotsvgRoute
+  '/embed': typeof EmbedRoute
+  '/methodology': typeof MethodologyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/v2': typeof V2Route
   '/api/cron': typeof ApiCronRoute
+  '/card/$file': typeof CardFileRoute
+  '/day/$date': typeof DayDateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/badge.svg': typeof BadgeDotsvgRoute
+  '/embed': typeof EmbedRoute
+  '/methodology': typeof MethodologyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/v2': typeof V2Route
   '/api/cron': typeof ApiCronRoute
+  '/card/$file': typeof CardFileRoute
+  '/day/$date': typeof DayDateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/cron'
+  fullPaths:
+    | '/'
+    | '/badge.svg'
+    | '/embed'
+    | '/methodology'
+    | '/sitemap.xml'
+    | '/v2'
+    | '/api/cron'
+    | '/card/$file'
+    | '/day/$date'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/cron'
-  id: '__root__' | '/' | '/api/cron'
+  to:
+    | '/'
+    | '/badge.svg'
+    | '/embed'
+    | '/methodology'
+    | '/sitemap.xml'
+    | '/v2'
+    | '/api/cron'
+    | '/card/$file'
+    | '/day/$date'
+  id:
+    | '__root__'
+    | '/'
+    | '/badge.svg'
+    | '/embed'
+    | '/methodology'
+    | '/sitemap.xml'
+    | '/v2'
+    | '/api/cron'
+    | '/card/$file'
+    | '/day/$date'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BadgeDotsvgRoute: typeof BadgeDotsvgRoute
+  EmbedRoute: typeof EmbedRoute
+  MethodologyRoute: typeof MethodologyRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  V2Route: typeof V2Route
   ApiCronRoute: typeof ApiCronRoute
+  CardFileRoute: typeof CardFileRoute
+  DayDateRoute: typeof DayDateRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/v2': {
+      id: '/v2'
+      path: '/v2'
+      fullPath: '/v2'
+      preLoaderRoute: typeof V2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/methodology': {
+      id: '/methodology'
+      path: '/methodology'
+      fullPath: '/methodology'
+      preLoaderRoute: typeof MethodologyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/embed': {
+      id: '/embed'
+      path: '/embed'
+      fullPath: '/embed'
+      preLoaderRoute: typeof EmbedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/badge.svg': {
+      id: '/badge.svg'
+      path: '/badge.svg'
+      fullPath: '/badge.svg'
+      preLoaderRoute: typeof BadgeDotsvgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/day/$date': {
+      id: '/day/$date'
+      path: '/day/$date'
+      fullPath: '/day/$date'
+      preLoaderRoute: typeof DayDateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/card/$file': {
+      id: '/card/$file'
+      path: '/card/$file'
+      fullPath: '/card/$file'
+      preLoaderRoute: typeof CardFileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron': {
@@ -70,7 +217,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BadgeDotsvgRoute: BadgeDotsvgRoute,
+  EmbedRoute: EmbedRoute,
+  MethodologyRoute: MethodologyRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  V2Route: V2Route,
   ApiCronRoute: ApiCronRoute,
+  CardFileRoute: CardFileRoute,
+  DayDateRoute: DayDateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

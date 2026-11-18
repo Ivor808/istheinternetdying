@@ -1,5 +1,6 @@
 interface DoomsdayClockProps {
   globalScore: number;
+  // Index 7 days earlier, or null when that day isn't in the data
   previousScore: number | null;
 }
 
@@ -16,7 +17,9 @@ export function DoomsdayClock({ globalScore, previousScore }: DoomsdayClockProps
   const g = Math.round((1 - urgency) * 180);
   const handColor = `rgb(${r}, ${g}, 50)`;
 
-  const delta = previousScore !== null ? globalScore - previousScore : null;
+  // Scores are unrounded; compare what's displayed so the delta adds up
+  const displayScore = Math.round(globalScore);
+  const delta = previousScore !== null ? displayScore - Math.round(previousScore) : null;
 
   return (
     <div
@@ -24,10 +27,17 @@ export function DoomsdayClock({ globalScore, previousScore }: DoomsdayClockProps
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '3rem 1rem',
+        padding: '2rem 1rem 1.5rem',
       }}
     >
-      <svg viewBox="0 0 200 200" width="300" height="300">
+      <svg
+        viewBox="0 0 200 200"
+        width="300"
+        height="300"
+        role="img"
+        aria-label={`Doomsday clock: ${displayMinutes} minutes to midnight`}
+        style={{ width: 'min(300px, 50vw)', height: 'auto' }}
+      >
         <circle cx="100" cy="100" r="95" fill="none" stroke="#333" strokeWidth="2" />
         <circle cx="100" cy="100" r="88" fill="none" stroke="#222" strokeWidth="1" />
 
@@ -75,10 +85,10 @@ export function DoomsdayClock({ globalScore, previousScore }: DoomsdayClockProps
         />
       </svg>
 
-      <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+      <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
         <div
           style={{
-            fontSize: '2rem',
+            fontSize: 'clamp(1.25rem, 6vw, 2rem)',
             fontWeight: 'bold',
             color: handColor,
             letterSpacing: '0.15em',
@@ -88,17 +98,19 @@ export function DoomsdayClock({ globalScore, previousScore }: DoomsdayClockProps
           {displayMinutes} MINUTES TO MIDNIGHT
         </div>
         <div style={{ fontSize: '1rem', color: '#888', marginTop: '0.5rem' }}>
-          Death Index: {globalScore}
+          Death Index: {displayScore}
         </div>
         {delta !== null && (
           <div
             style={{
               fontSize: '0.85rem',
-              color: delta >= 0 ? '#4a4' : '#f44',
+              color: delta === 0 ? '#888' : delta > 0 ? '#4a4' : '#f44',
               marginTop: '0.25rem',
             }}
           >
-            {delta >= 0 ? '\u25B2' : '\u25BC'} {Math.abs(delta)} from last week
+            {delta === 0
+              ? 'no change from last week'
+              : `${delta > 0 ? '\u25B2' : '\u25BC'} ${Math.abs(delta)} from last week`}
           </div>
         )}
       </div>

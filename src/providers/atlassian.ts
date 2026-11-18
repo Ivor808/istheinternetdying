@@ -1,4 +1,4 @@
-import type { StatusProvider, ProviderIncident } from './types';
+import type { StatusProvider, ProviderIncident, FetchResult } from './types';
 
 interface AtlassianComponent {
   id: string;
@@ -11,9 +11,11 @@ interface AtlassianIncident {
   name: string;
   impact: string;
   created_at: string;
+  // When the provider says the problem began; can be earlier than created_at
+  started_at?: string | null;
   resolved_at: string | null;
   status: string;
-  components: AtlassianComponent[];
+  components?: AtlassianComponent[];
   [key: string]: unknown;
 }
 
@@ -21,40 +23,45 @@ interface AtlassianResponse {
   incidents: AtlassianIncident[];
 }
 
-export function mapImpactToSeverity(
-  impact: string
-): 'minor' | 'major' | 'critical' {
+type Severity = ProviderIncident['severity'];
+
+// Null for anything that isn't an outage level ("none", "maintenance", or new values)
+export function mapImpactToSeverity(impact: string): Severity | null {
   switch (impact) {
     case 'critical':
       return 'critical';
     case 'major':
       return 'major';
-    default:
+    case 'minor':
       return 'minor';
+    default:
+      return null;
   }
 }
 
 /**
  * Determine if an incident represents a real service degradation.
  * Filters out:
- * - impact "none" — informational posts, maintenance notices, rollouts
- * - scheduled maintenance filed as incidents (long duration + no impact)
+ * - impact "none": informational posts, rollout notices
+ * - impact "maintenance": scheduled maintenance filed as an incident
+ * - any impact we don't recognise (logged by fetchIncidents)
  */
 export function isRealOutage(incident: AtlassianIncident): boolean {
-  // "none" impact = not a real outage
-  if (incident.impact === 'none') return false;
-
-  return true;
+  return mapImpactToSeverity(incident.impact) !== null;
 }
+
+const KNOWN_NON_OUTAGE_IMPACTS = new Set(['none', 'maintenance']);
 
 export function parseAtlassianIncident(
   raw: AtlassianIncident
 ): ProviderIncident {
+  const severity = mapImpactToSeverity(raw.impact);
+  if (!severity) throw new Error(`Not an outage: impact "${raw.impact}"`);
   return {
     externalId: raw.id,
     title: raw.name,
-    severity: mapImpactToSeverity(raw.impact),
-    startedAt: new Date(raw.created_at),
+    severity,
+    startedAt: new Date(raw.started_at ?? raw.created_at),
     resolvedAt: raw.resolved_at ? new Date(raw.resolved_at) : null,
     raw: raw as Record<string, unknown>,
   };
@@ -76,46 +83,43 @@ function validateStatusPageUrl(statusPageUrl: string): URL {
 export const atlassianProvider: StatusProvider = {
   type: 'atlassian',
 
-  async fetchIncidents(
-    statusPageUrl: string,
-    since: Date
-  ): Promise<ProviderIncident[]> {
+  // The endpoint ignores page/per_page and always returns the ~50 most recent
+  // incidents, so one request is all there is. History builds up across runs.
+  async fetchIncidents(statusPageUrl: string): Promise<FetchResult> {
     validateStatusPageUrl(statusPageUrl);
 
-    const incidents: ProviderIncident[] = [];
-    let page = 1;
-    const MAX_PAGES = 20; // Safety limit: 20 pages × 50 = 1000 incidents max
+    const url = `${statusPageUrl}/api/v2/incidents.json`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
 
-    while (page <= MAX_PAGES) {
-      const url = `${statusPageUrl}/api/v2/incidents.json?page=${page}&per_page=50`;
-      const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch ${url}: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data: AtlassianResponse = await response.json();
-
-      if (data.incidents.length === 0) break;
-
-      let reachedSince = false;
-      for (const incident of data.incidents) {
-        const createdAt = new Date(incident.created_at);
-        if (createdAt < since) {
-          reachedSince = true;
-          break;
-        }
-        if (isRealOutage(incident)) {
-          incidents.push(parseAtlassianIncident(incident));
-        }
-      }
-
-      if (reachedSince || data.incidents.length < 50) break;
-      page++;
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${url}: ${response.status} ${response.statusText}`
+      );
     }
 
-    return incidents;
+    const data: AtlassianResponse = await response.json();
+
+    const incidents: ProviderIncident[] = [];
+    const excludedIds: string[] = [];
+    let oldest: number | null = null;
+    for (const incident of data.incidents) {
+      const created = Date.parse(incident.created_at);
+      if (Number.isFinite(created) && (oldest === null || created < oldest)) oldest = created;
+
+      if (isRealOutage(incident)) {
+        incidents.push(parseAtlassianIncident(incident));
+      } else {
+        excludedIds.push(incident.id);
+        if (!KNOWN_NON_OUTAGE_IMPACTS.has(incident.impact)) {
+          console.warn(`[atlassian] Skipping ${incident.id} at ${statusPageUrl}: unknown impact "${incident.impact}"`);
+        }
+      }
+    }
+
+    return {
+      incidents,
+      excludedIds,
+      oldestListedAt: oldest === null ? null : new Date(oldest),
+    };
   },
 };

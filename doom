@@ -19,6 +19,7 @@ usage() {
   echo "  wipe      Drop all tables and re-migrate"
   echo "  sync      Trigger daily cron sync"
   echo "  dev       Start the dev server"
+  echo "  mock      Start the dev server with mock data (no database)"
   echo "  status    Show Supabase status"
   echo "  studio    Open Supabase Studio URL"
   echo "  db        Open psql shell in the database"
@@ -99,6 +100,10 @@ cmd_dev() {
   npm run dev
 }
 
+cmd_mock() {
+  npm run dev:mock
+}
+
 cmd_status() {
   supabase status
 }
@@ -123,6 +128,7 @@ case "$1" in
   wipe)    cmd_wipe ;;
   sync)    cmd_sync ;;
   dev)     cmd_dev ;;
+  mock)    cmd_mock ;;
   status)  cmd_status ;;
   studio)  cmd_studio ;;
   db)      cmd_db ;;

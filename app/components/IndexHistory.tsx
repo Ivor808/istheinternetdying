@@ -31,12 +31,16 @@ export function IndexHistory({ history }: IndexHistoryProps) {
   const pageRows = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <div style={{ padding: '2rem 1rem' }}>
-      <h2 style={{ color: '#ccc', marginBottom: '1rem' }}>
-        Death Index History
-      </h2>
+    <details style={{ padding: '2rem 1rem' }}>
+      <summary style={{ cursor: 'pointer', listStyle: 'none' }}>
+        <h2 style={{ color: '#ccc', display: 'inline' }}>Death Index History</h2>
+        <span style={{ color: '#888', fontSize: '0.8rem', fontFamily: 'monospace', marginLeft: '0.75rem' }}>
+          daily table ▾
+        </span>
+      </summary>
       <div
         style={{
+          marginTop: '1rem',
           overflowX: 'auto',
           border: '1px solid #222',
           borderRadius: '8px',
@@ -62,7 +66,8 @@ export function IndexHistory({ history }: IndexHistoryProps) {
             {pageRows.map((row, i) => {
               const globalIndex = page * PAGE_SIZE + i;
               const prev = rows[globalIndex + 1];
-              const delta = prev ? row.globalScore - prev.globalScore : null;
+              const score = Math.round(row.globalScore);
+              const delta = prev ? score - Math.round(prev.globalScore) : null;
 
               return (
                 <tr
@@ -76,11 +81,11 @@ export function IndexHistory({ history }: IndexHistoryProps) {
                   <td
                     style={{
                       ...tdStyle,
-                      color: scoreColor(row.globalScore),
+                      color: scoreColor(score),
                       fontWeight: 'bold',
                     }}
                   >
-                    {row.globalScore}
+                    {score}
                   </td>
                   <td style={tdStyle}>
                     {minutesToMidnight(row.globalScore)}
@@ -96,7 +101,7 @@ export function IndexHistory({ history }: IndexHistoryProps) {
                       </span>
                     )}
                     {delta === 0 && (
-                      <span style={{ color: '#555' }}>—</span>
+                      <span style={{ color: '#888' }}>—</span>
                     )}
                   </td>
                 </tr>
@@ -123,7 +128,7 @@ export function IndexHistory({ history }: IndexHistoryProps) {
           >
             Newer
           </button>
-          <span style={{ color: '#666', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+          <span style={{ color: '#999', fontSize: '0.8rem', fontFamily: 'monospace' }}>
             {page + 1} / {totalPages}
           </span>
           <button
@@ -135,7 +140,7 @@ export function IndexHistory({ history }: IndexHistoryProps) {
           </button>
         </div>
       )}
-    </div>
+    </details>
   );
 }
 

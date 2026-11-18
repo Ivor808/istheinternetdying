@@ -17,6 +17,9 @@ export const providers = pgTable('providers', {
   category: text('category').notNull(),
   statusPageUrl: text('status_page_url').notNull(),
   providerType: text('provider_type').notNull(),
+  // Stored incidents are complete from here on (the feed only lists recent ones)
+  coverageStart: timestamp('coverage_start'),
+  lastFetchedAt: timestamp('last_fetched_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -71,4 +74,8 @@ export const dailyIndex = pgTable('daily_index', {
   categoryScores: jsonb('category_scores')
     .$type<Record<string, number>>()
     .notNull(),
+  // Providers with complete data for the date's 7-day window, out of all
+  // tracked. Null on rows scored before coverage was recorded.
+  coveredProviders: integer('covered_providers'),
+  totalProviders: integer('total_providers'),
 });

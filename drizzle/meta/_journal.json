@@ -15,6 +15,13 @@
       "when": 1775006952443,
       "tag": "0001_add-monthly-cves",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794873138621,
+      "tag": "0002_index-coverage",
+      "breakpoints": true
     }
   ]
 }

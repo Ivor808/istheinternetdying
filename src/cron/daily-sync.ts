@@ -2,16 +2,16 @@ import { db } from '../db/client';
 import { providers, incidents, dailyScores, dailyIndex } from '../db/schema';
 import { providerConfigs } from '../providers/config';
 import { getProvider } from '../providers/registry';
-import { computeRollingScore } from '../scoring/provider-score';
 import {
-  computeCategoryScores,
-  computeGlobalIndex,
-} from '../scoring/aggregation';
-import { eq, and, or, sql, gte, lte, isNull } from 'drizzle-orm';
+  datesToScore,
+  scoreDate,
+  toDateStr,
+  updateCoverage,
+  type ScoringIncident,
+  type ScoringProvider,
+} from '../scoring/daily-index';
+import { and, eq, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
 import { syncCVECounts } from './cve-sync';
-
-const BACKFILL_START = new Date('2024-01-01T00:00:00Z');
-const DAILY_START = new Date('2026-01-01T00:00:00Z');
 
 export async function syncProviders(): Promise<void> {
   for (const config of providerConfigs) {
@@ -36,8 +36,10 @@ export async function syncProviders(): Promise<void> {
   }
 }
 
+type ProviderRow = typeof providers.$inferSelect;
+
 async function fetchSingleProvider(
-  provider: { id: number; slug: string; providerType: string; statusPageUrl: string },
+  provider: ProviderRow,
   idx: number,
   total: number,
 ): Promise<{ slug: string; error?: unknown }> {
@@ -45,42 +47,59 @@ async function fetchSingleProvider(
     console.log(`[sync] ${idx + 1}/${total} ${provider.slug}...`);
     const plugin = getProvider(provider.providerType);
 
-    const existing = await db
-      .select({ id: incidents.id })
-      .from(incidents)
-      .where(eq(incidents.providerId, provider.id))
-      .limit(1);
-
-    const since = existing.length === 0 ? BACKFILL_START : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-    const fetched = await plugin.fetchIncidents(
-      provider.statusPageUrl,
-      since
+    // Taken before the request so coverage never claims more than the fetch saw
+    const fetchedAt = new Date();
+    const { incidents: fetched, excludedIds, oldestListedAt } = await plugin.fetchIncidents(
+      provider.statusPageUrl
     );
     console.log(`[sync] ${provider.slug}: ${fetched.length} incidents`);
 
-    for (const incident of fetched) {
+    // Upsert everything the feed returns: incidents resolved or reclassified
+    // since the last run get their new data
+    if (fetched.length > 0) {
       await db
         .insert(incidents)
-        .values({
-          providerId: provider.id,
-          externalId: incident.externalId,
-          title: incident.title,
-          severity: incident.severity,
-          startedAt: incident.startedAt,
-          resolvedAt: incident.resolvedAt,
-          raw: incident.raw,
-        })
+        .values(
+          fetched.map((incident) => ({
+            providerId: provider.id,
+            externalId: incident.externalId,
+            title: incident.title,
+            severity: incident.severity,
+            startedAt: incident.startedAt,
+            resolvedAt: incident.resolvedAt,
+            raw: incident.raw,
+          }))
+        )
         .onConflictDoUpdate({
           target: [incidents.providerId, incidents.externalId],
           set: {
             title: sql`excluded.title`,
             severity: sql`excluded.severity`,
+            startedAt: sql`excluded.started_at`,
             resolvedAt: sql`excluded.resolved_at`,
             raw: sql`excluded.raw`,
           },
         });
     }
+
+    // Incidents since reclassified as maintenance/informational stop counting
+    if (excludedIds.length > 0) {
+      await db
+        .delete(incidents)
+        .where(
+          and(
+            eq(incidents.providerId, provider.id),
+            inArray(incidents.externalId, excludedIds)
+          )
+        );
+    }
+
+    const coverage = updateCoverage(provider, oldestListedAt, fetchedAt);
+    await db
+      .update(providers)
+      .set({ coverageStart: coverage.coverageStart, lastFetchedAt: coverage.lastFetchedAt })
+      .where(eq(providers.id, provider.id));
+
     return { slug: provider.slug };
   } catch (err) {
     console.error(`[sync] Failed: ${provider.slug}:`, err instanceof Error ? err.message : err);
@@ -118,134 +137,122 @@ export async function fetchAndStoreIncidents(): Promise<{ providerErrors: Array<
   return { providerErrors };
 }
 
+// Providers configured for tracking, with coverage and all their incidents
+async function loadScoringProviders(): Promise<ScoringProvider[]> {
+  const configured = new Set(providerConfigs.map((c) => c.slug));
+  const rows = (await db.select().from(providers)).filter((p) => configured.has(p.slug));
+  const incidentRows = await db
+    .select({
+      providerId: incidents.providerId,
+      severity: incidents.severity,
+      startedAt: incidents.startedAt,
+      resolvedAt: incidents.resolvedAt,
+    })
+    .from(incidents);
+
+  const byProvider = new Map<number, ScoringIncident[]>();
+  for (const r of incidentRows) {
+    const list = byProvider.get(r.providerId) ?? [];
+    list.push({
+      severity: r.severity as ScoringIncident['severity'],
+      startedAt: r.startedAt,
+      resolvedAt: r.resolvedAt,
+    });
+    byProvider.set(r.providerId, list);
+  }
+
+  return rows.map((p) => ({
+    id: p.id,
+    category: p.category,
+    coverageStart: p.coverageStart,
+    lastFetchedAt: p.lastFetchedAt,
+    incidents: byProvider.get(p.id) ?? [],
+  }));
+}
+
+export interface ScoredDate {
+  date: string;
+  globalScore: number | null;
+  coveredProviders: number;
+  totalProviders: number;
+}
+
+/**
+ * Score each (completed) date and store provider scores and the index row.
+ * Uncovered providers are left out of the date entirely; the index row
+ * records how many providers were covered so readers can hide thin dates.
+ */
 export async function computeAndStoreScores(
-  date: Date
-): Promise<{ globalScore: number; categoryScores: Record<string, number> }> {
-  const allProviders = await db.select().from(providers);
-  const sevenDaysAgo = new Date(date.getTime() - 7 * 24 * 60 * 60 * 1000);
+  dates: Date[],
+  scoringProviders?: ScoringProvider[]
+): Promise<ScoredDate[]> {
+  const all = scoringProviders ?? (await loadScoringProviders());
+  const results: ScoredDate[] = [];
 
-  const providerScoreEntries: { category: string; score: number }[] = [];
+  for (const date of dates) {
+    const dateStr = toDateStr(date);
+    const result = scoreDate(all, date);
 
-  for (const provider of allProviders) {
-    // Check if this provider has ANY incident data at or before this date.
-    // No data means we can't distinguish "perfect uptime" from "no coverage" —
-    // so we omit the provider entirely rather than assuming 100.
-    const [hasData] = await db
-      .select({ id: incidents.id })
-      .from(incidents)
+    for (const { providerId, score } of result.providerScores) {
+      await db
+        .insert(dailyScores)
+        .values({ providerId, date: dateStr, score: String(score) })
+        .onConflictDoUpdate({
+          target: [dailyScores.providerId, dailyScores.date],
+          set: { score: sql`excluded.score` },
+        });
+    }
+
+    // A provider that lost coverage for this date shouldn't keep an old score
+    const scoredIds = result.providerScores.map((s) => s.providerId);
+    await db
+      .delete(dailyScores)
       .where(
-        and(
-          eq(incidents.providerId, provider.id),
-          lte(incidents.startedAt, date)
-        )
-      )
-      .limit(1);
-
-    if (!hasData) continue;
-
-    const providerIncidents = await db
-      .select({
-        severity: incidents.severity,
-        startedAt: incidents.startedAt,
-        resolvedAt: incidents.resolvedAt,
-      })
-      .from(incidents)
-      .where(
-        and(
-          eq(incidents.providerId, provider.id),
-          lte(incidents.startedAt, date),
-          or(
-            isNull(incidents.resolvedAt),
-            gte(incidents.resolvedAt, sevenDaysAgo)
-          )
-        )
+        scoredIds.length > 0
+          ? and(eq(dailyScores.date, dateStr), notInArray(dailyScores.providerId, scoredIds))
+          : eq(dailyScores.date, dateStr)
       );
 
-    const incidentWindows = providerIncidents.map((inc) => ({
-      severity: inc.severity as 'minor' | 'major' | 'critical',
-      startedAt: inc.startedAt,
-      resolvedAt: inc.resolvedAt,
-    }));
+    if (result.globalScore !== null) {
+      await db
+        .insert(dailyIndex)
+        .values({
+          date: dateStr,
+          globalScore: String(result.globalScore),
+          categoryScores: result.categoryScores,
+          coveredProviders: result.coveredProviders,
+          totalProviders: result.totalProviders,
+        })
+        .onConflictDoUpdate({
+          target: dailyIndex.date,
+          set: {
+            globalScore: sql`excluded.global_score`,
+            categoryScores: sql`excluded.category_scores`,
+            coveredProviders: sql`excluded.covered_providers`,
+            totalProviders: sql`excluded.total_providers`,
+          },
+        });
+    }
 
-    const score = computeRollingScore(incidentWindows, date);
-
-    const dateStr = date.toISOString().split('T')[0];
-    await db
-      .insert(dailyScores)
-      .values({
-        providerId: provider.id,
-        date: dateStr,
-        score: String(score),
-      })
-      .onConflictDoUpdate({
-        target: [dailyScores.providerId, dailyScores.date],
-        set: { score: sql`excluded.score` },
-      });
-
-    providerScoreEntries.push({ category: provider.category, score });
-  }
-
-  const catScores = computeCategoryScores(providerScoreEntries);
-  const global = computeGlobalIndex(catScores);
-
-  const dateStr = date.toISOString().split('T')[0];
-  await db
-    .insert(dailyIndex)
-    .values({
+    results.push({
       date: dateStr,
-      globalScore: String(global),
-      categoryScores: catScores,
-    })
-    .onConflictDoUpdate({
-      target: dailyIndex.date,
-      set: {
-        globalScore: sql`excluded.global_score`,
-        categoryScores: sql`excluded.category_scores`,
-      },
+      globalScore: result.globalScore,
+      coveredProviders: result.coveredProviders,
+      totalProviders: result.totalProviders,
     });
+  }
 
-  return { globalScore: global, categoryScores: catScores };
+  return results;
 }
 
 /**
- * Generate score dates: monthly (1st of month) from BACKFILL_START to DAILY_START,
- * then daily from DAILY_START to today.
+ * Fetch every feed, then score completed days only: the trailing window is
+ * rescored every run so rows settle once late updates are in, and any earlier
+ * day that could be covered but has no coverage-aware row yet is filled in.
  */
-function getScoreDates(today: Date): Date[] {
-  const dates: Date[] = [];
-
-  // Monthly from Jan 2024 through Dec 2025
-  const cursor = new Date(BACKFILL_START);
-  while (cursor < DAILY_START) {
-    dates.push(new Date(cursor));
-    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
-  }
-
-  // Daily from Jan 1, 2026 through today
-  const dayCursor = new Date(DAILY_START);
-  while (dayCursor <= today) {
-    dates.push(new Date(dayCursor));
-    dayCursor.setUTCDate(dayCursor.getUTCDate() + 1);
-  }
-
-  return dates;
-}
-
-/**
- * Check if we need to backfill by looking for any existing daily_index rows.
- */
-async function needsBackfill(): Promise<boolean> {
-  const existing = await db
-    .select({ id: dailyIndex.id })
-    .from(dailyIndex)
-    .limit(1);
-  return existing.length === 0;
-}
-
 export async function runDailySync(): Promise<{
-  globalScore: number;
-  categoryScores: Record<string, number>;
-  backfilled: boolean;
+  scored: number;
+  latest: ScoredDate | null;
 }> {
   await syncProviders();
   const { providerErrors } = await fetchAndStoreIncidents();
@@ -253,25 +260,23 @@ export async function runDailySync(): Promise<{
     console.warn(`${providerErrors.length} provider(s) failed during incident fetch:`, providerErrors.map((e) => e.slug));
   }
 
-  const today = new Date();
-  const backfill = await needsBackfill();
+  const scoringProviders = await loadScoringProviders();
+  const scoredRows = await db
+    .select({ date: dailyIndex.date })
+    .from(dailyIndex)
+    .where(isNotNull(dailyIndex.coveredProviders));
+  const dates = datesToScore(
+    new Date(),
+    scoringProviders,
+    new Set(scoredRows.map((r) => r.date))
+  );
 
-  if (backfill) {
-    console.log('No existing index data — running full backfill...');
-    const dates = getScoreDates(today);
-    console.log(`Computing scores for ${dates.length} dates (monthly 2024-2025, daily 2026+)...`);
-    let lastResult = { globalScore: 100, categoryScores: {} as Record<string, number> };
-    for (let i = 0; i < dates.length; i++) {
-      lastResult = await computeAndStoreScores(dates[i]);
-      if ((i + 1) % 6 === 0 || i === dates.length - 1) {
-        console.log(`  ${i + 1}/${dates.length} — ${dates[i].toISOString().split('T')[0]} → index ${lastResult.globalScore}`);
-      }
-    }
-    await syncCVECounts();
-    return { ...lastResult, backfilled: true };
+  console.log(`[sync] Scoring ${dates.length} day(s)...`);
+  const results = await computeAndStoreScores(dates, scoringProviders);
+  for (const r of results) {
+    console.log(`[sync] ${r.date}: index ${r.globalScore?.toFixed(2) ?? '—'} (${r.coveredProviders}/${r.totalProviders} providers covered)`);
   }
 
-  const result = await computeAndStoreScores(today);
   await syncCVECounts();
-  return { ...result, backfilled: false };
+  return { scored: results.length, latest: results[results.length - 1] ?? null };
 }
