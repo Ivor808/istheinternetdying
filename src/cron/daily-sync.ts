@@ -232,6 +232,9 @@ export async function computeAndStoreScores(
             totalProviders: sql`excluded.total_providers`,
           },
         });
+    } else {
+      // Nothing covered this date any more; an old row would otherwise keep showing a stale score
+      await db.delete(dailyIndex).where(eq(dailyIndex.date, dateStr));
     }
 
     results.push({

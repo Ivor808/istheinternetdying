@@ -103,6 +103,13 @@ describe('atlassian provider', () => {
       });
     });
 
+    it('falls back to created_at when started_at is blank, and rejects unreadable times', () => {
+      const base = { id: 'x1', name: 'Blip', impact: 'minor', created_at: '2026-01-15T10:00:00.000Z', resolved_at: null, status: 'resolved' };
+      expect(parseAtlassianIncident({ ...base, started_at: '' }).startedAt).toEqual(new Date('2026-01-15T10:00:00.000Z'));
+      expect(() => parseAtlassianIncident({ ...base, started_at: 'nope', created_at: 'nope' })).toThrow('No usable start time');
+      expect(() => parseAtlassianIncident({ ...base, resolved_at: 'nope' })).toThrow('Unreadable resolved_at');
+    });
+
     it('uses started_at when the provider backdates the start', () => {
       const raw = {
         id: 'gh1',

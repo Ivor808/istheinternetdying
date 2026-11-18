@@ -13,7 +13,7 @@ interface IncidentWindow {
  * - Major: 120 hours (5 days)
  * - Minor: 168 hours (7 days) — minor issues can linger longer
  */
-const MAX_DURATION_MS: Record<number, number> = {
+export const MAX_DURATION_MS: Record<number, number> = {
   1: 7 * 24 * 60 * 60 * 1000,   // minor: 7 days
   2: 5 * 24 * 60 * 60 * 1000,   // major: 5 days
   3: 3 * 24 * 60 * 60 * 1000,   // critical: 3 days

@@ -10,16 +10,19 @@ const now = at('2026-11-20T00:00:00');
 
 describe('hoursWithinDay', () => {
   it('clips an incident to the day', () => {
-    const i = { startedAt: at('2026-11-12T22:00:00'), resolvedAt: at('2026-11-13T03:00:00') };
+    const i = { severity: 'minor' as const, startedAt: at('2026-11-12T22:00:00'), resolvedAt: at('2026-11-13T03:00:00') };
     expect(hoursWithinDay(i, '2026-11-12', now)).toBe(2);
     expect(hoursWithinDay(i, '2026-11-13', now)).toBe(3);
     expect(hoursWithinDay(i, '2026-11-14', now)).toBe(0);
   });
 
-  it('caps open incidents at a week', () => {
-    const i = { startedAt: at('2026-11-01T00:00:00'), resolvedAt: null };
-    expect(hoursWithinDay(i, '2026-11-07', now)).toBe(24);
-    expect(hoursWithinDay(i, '2026-11-08', now)).toBe(0);
+  it('caps incidents by severity, like scoring', () => {
+    const minor = { severity: 'minor' as const, startedAt: at('2026-11-01T00:00:00'), resolvedAt: null };
+    expect(hoursWithinDay(minor, '2026-11-07', now)).toBe(24);
+    expect(hoursWithinDay(minor, '2026-11-08', now)).toBe(0);
+    const critical = { ...minor, severity: 'critical' as const, resolvedAt: at('2026-11-10T00:00:00') };
+    expect(hoursWithinDay(critical, '2026-11-03', now)).toBe(24);
+    expect(hoursWithinDay(critical, '2026-11-04', now)).toBe(0);
   });
 });
 

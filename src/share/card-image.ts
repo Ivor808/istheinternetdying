@@ -33,6 +33,7 @@ const estimateWidth: Measure = (s, size) => s.length * size * 0.5;
 const LOGO = 30;
 const LOGO_GAP = 10;
 const ITEM_GAP = 36;
+const MAX_MEASURED = 8;
 
 // Logo + name for as many services as fit on one line, then "+N"
 function servicesRow(
@@ -43,7 +44,8 @@ function servicesRow(
   size: number,
   measure: Measure
 ): string {
-  const items = services.map((s) => {
+  // Only a handful ever fit, so only measure those
+  const items = services.slice(0, MAX_MEASURED).map((s) => {
     const d = logoPath(s.slug);
     const textWidth = measure(s.name, size);
     return { ...s, d, textWidth, width: (d ? LOGO + LOGO_GAP : 0) + textWidth };
@@ -52,7 +54,7 @@ function servicesRow(
   let used = 0;
   let shown = 0;
   for (const item of items) {
-    const rest = items.length - shown - 1;
+    const rest = services.length - shown - 1;
     const need = (shown > 0 ? ITEM_GAP : 0) + item.width + (rest > 0 ? ITEM_GAP + plusWidth(rest) : 0);
     if (shown > 0 && used + need > maxWidth) break;
     used += (shown > 0 ? ITEM_GAP : 0) + item.width;
@@ -70,7 +72,7 @@ function servicesRow(
     parts.push(`<text x="${x}" y="${baseline}" font-family="${SANS}" font-weight="500" font-size="${size}" fill="${C.text}">${esc(item.name)}</text>`);
     x += item.textWidth + ITEM_GAP;
   }
-  const rest = items.length - shown;
+  const rest = services.length - shown;
   if (rest > 0) {
     parts.push(`<text x="${x}" y="${baseline}" font-family="${SANS}" font-weight="500" font-size="${size}" fill="${C.muted}">+${rest}</text>`);
   }

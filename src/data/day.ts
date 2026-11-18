@@ -2,6 +2,7 @@ import { and, eq, gt, gte, inArray, isNull, lt, or } from 'drizzle-orm';
 import { db } from '../db/client';
 import { incidents, providers } from '../db/schema';
 import { providerConfigs } from '../providers/config';
+import { MAX_DURATION_MS } from '../scoring/provider-score';
 import { getDashboardData } from './dashboard';
 import { displayName, fameRank, normalBand, toDeath } from './death';
 import { EVENTS, type TimelineEvent } from './events';
@@ -47,9 +48,9 @@ interface RawIncident {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
-// Open incidents older than this are stale feeds, same cap as scoring
-const STALE_MS = 7 * DAY_MS;
 const RANK: Record<Severity, number> = { minor: 1, major: 2, critical: 3 };
+// Longest any incident can count for, matching scoring's per-severity caps
+const STALE_MS = Math.max(...Object.values(MAX_DURATION_MS));
 
 // A day is notable if something we track as an event happened, the index rose sharply,
 // or several services had serious incidents at once
@@ -61,10 +62,16 @@ const STATUS_URL = new Map(providerConfigs.map((p) => [p.slug, p.statusPageUrl])
 const dayStartOf = (date: string) => Date.parse(`${date}T00:00:00Z`);
 const dateOf = (ts: number) => new Date(ts).toISOString().slice(0, 10);
 
-export function hoursWithinDay(i: { startedAt: Date; resolvedAt: Date | null }, date: string, now: Date): number {
+// Same counting as scoring: open incidents run to now, and every incident is capped by severity
+export function hoursWithinDay(
+  i: { severity: Severity; startedAt: Date; resolvedAt: Date | null },
+  date: string,
+  now: Date
+): number {
   const start = dayStartOf(date);
   const end = Math.min(start + DAY_MS, now.getTime());
-  const until = i.resolvedAt ? i.resolvedAt.getTime() : Math.min(now.getTime(), i.startedAt.getTime() + STALE_MS);
+  const cap = i.startedAt.getTime() + MAX_DURATION_MS[RANK[i.severity]];
+  const until = Math.min(i.resolvedAt ? i.resolvedAt.getTime() : now.getTime(), cap);
   return Math.max(0, Math.min(until, end) - Math.max(i.startedAt.getTime(), start)) / HOUR_MS;
 }
 

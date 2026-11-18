@@ -52,17 +52,27 @@ export function isRealOutage(incident: AtlassianIncident): boolean {
 
 const KNOWN_NON_OUTAGE_IMPACTS = new Set(['none', 'maintenance']);
 
+function parseDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isFinite(d.getTime()) ? d : null;
+}
+
 export function parseAtlassianIncident(
   raw: AtlassianIncident
 ): ProviderIncident {
   const severity = mapImpactToSeverity(raw.impact);
   if (!severity) throw new Error(`Not an outage: impact "${raw.impact}"`);
+  const startedAt = parseDate(raw.started_at) ?? parseDate(raw.created_at);
+  if (!startedAt) throw new Error(`No usable start time on incident ${raw.id}`);
+  const resolvedAt = parseDate(raw.resolved_at);
+  if (raw.resolved_at && !resolvedAt) throw new Error(`Unreadable resolved_at on incident ${raw.id}`);
   return {
     externalId: raw.id,
     title: raw.name,
     severity,
-    startedAt: new Date(raw.started_at ?? raw.created_at),
-    resolvedAt: raw.resolved_at ? new Date(raw.resolved_at) : null,
+    startedAt,
+    resolvedAt,
     raw: raw as Record<string, unknown>,
   };
 }
@@ -107,7 +117,12 @@ export const atlassianProvider: StatusProvider = {
       if (Number.isFinite(created) && (oldest === null || created < oldest)) oldest = created;
 
       if (isRealOutage(incident)) {
-        incidents.push(parseAtlassianIncident(incident));
+        // One malformed incident shouldn't sink the whole provider's batch
+        try {
+          incidents.push(parseAtlassianIncident(incident));
+        } catch (err) {
+          console.warn(`[atlassian] Skipping ${incident.id} at ${statusPageUrl}: ${(err as Error).message}`);
+        }
       } else {
         excludedIds.push(incident.id);
         if (!KNOWN_NON_OUTAGE_IMPACTS.has(incident.impact)) {
