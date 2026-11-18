@@ -251,7 +251,8 @@ function Dashboard() {
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [showAllEvents, setShowAllEvents] = useState(false);
 
-  const latestTs = current ? toTs(current.date) : 0;
+  // Events up to the latest scored day; before any day is scored, up to today (the grid's last day)
+  const latestTs = current ? toTs(current.date) : toTs(grid.days[grid.days.length - 1]);
   const scoredDates = useMemo(() => new Set(history.map((h) => h.date)), [history]);
   const dayCount = grid.days.length;
 

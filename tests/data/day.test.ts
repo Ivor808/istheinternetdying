@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 // The pure rules only; keep the database client out of it
 vi.mock('@/db/client', () => ({ db: {} }));
-const { hoursWithinDay, isNotable, majorServicesByDate, notableDates, sortIncidents, NOTABLE_RISE, NOTABLE_SERVICES } =
+const { hoursWithinDay, isNotable, majorServicesByDate, notableDates, servicesCutoff, sortIncidents, NOTABLE_RISE, NOTABLE_SERVICES } =
   await import('@/data/day');
 
 const at = (s: string) => new Date(`${s}Z`);
@@ -31,11 +31,25 @@ describe('isNotable', () => {
   it('needs an outage event, several serious incidents, or a sharp rise', () => {
     expect(isNotable(quiet)).toBe(false);
     expect(isNotable({ ...quiet, events: [{ date: '2026-11-13', label: 'FAA', category: 'outage' as const }] })).toBe(true);
-    expect(isNotable({ ...quiet, events: [{ date: '2026-11-13', label: 'Model', category: 'model' as const }] })).toBe(false);
+    expect(isNotable({ ...quiet, events: [{ date: '2026-11-13', label: 'Model', category: 'model' as const, major: true }] })).toBe(false);
     expect(isNotable({ ...quiet, majorServices: NOTABLE_SERVICES })).toBe(true);
     expect(isNotable({ ...quiet, majorServices: NOTABLE_SERVICES - 1 })).toBe(false);
     expect(isNotable({ ...quiet, rise: NOTABLE_RISE })).toBe(true);
     expect(isNotable({ ...quiet, rise: null })).toBe(false);
+  });
+});
+
+describe('servicesCutoff', () => {
+  it('lets in at most a tenth of days, ties included', () => {
+    // 20 days: most have 3-4 serious services, a few have many
+    const counts = [...Array(14).fill(3), 4, 4, 4, 9, 12, 15];
+    const cutoff = servicesCutoff(counts);
+    expect(counts.filter((c) => c >= cutoff).length).toBeLessThanOrEqual(2);
+    expect(cutoff).toBe(10);
+  });
+
+  it('never drops below the absolute floor', () => {
+    expect(servicesCutoff(Array(30).fill(0))).toBe(NOTABLE_SERVICES);
   });
 });
 
@@ -46,6 +60,8 @@ describe('majorServicesByDate', () => {
       [
         { ...base, slug: 'a', severity: 'major', startedAt: at('2026-11-12T23:00:00'), resolvedAt: at('2026-11-13T01:00:00') },
         { ...base, slug: 'a', severity: 'critical', startedAt: at('2026-11-13T05:00:00'), resolvedAt: at('2026-11-13T06:00:00') },
+        // Too short to count
+        { ...base, slug: 'c', severity: 'major', startedAt: at('2026-11-13T05:00:00'), resolvedAt: at('2026-11-13T05:20:00') },
         { ...base, slug: 'b', severity: 'minor', startedAt: at('2026-11-13T05:00:00'), resolvedAt: at('2026-11-13T06:00:00') },
       ],
       now
