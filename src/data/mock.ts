@@ -1,4 +1,4 @@
-import type { DashboardData, ProviderHistory } from './dashboard';
+import type { DashboardData } from './dashboard';
 import { EVENTS } from './events';
 import { providerConfigs } from '../providers/config';
 import { GRID_DAYS, buildServiceGrid, type GridIncident, type ServiceGrid } from './service-grid';
@@ -16,17 +16,6 @@ const CATEGORY_BASE: Record<string, number> = {
   comms: 94,
   fintech: 96,
 };
-
-const PROVIDERS = [
-  { slug: 'cloudflare', name: 'Cloudflare', category: 'cloud-infra' },
-  { slug: 'github', name: 'GitHub', category: 'dev-tools' },
-  { slug: 'openai', name: 'OpenAI', category: 'ai' },
-  { slug: 'anthropic', name: 'Anthropic', category: 'ai' },
-  { slug: 'discord', name: 'Discord', category: 'comms' },
-  { slug: 'npm', name: 'npm', category: 'dev-tools' },
-  { slug: 'dropbox', name: 'Dropbox', category: 'productivity' },
-  { slug: 'reddit', name: 'Reddit', category: 'comms' },
-];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 // Stand-in for the first day with adequate coverage in production
@@ -85,22 +74,6 @@ function timeline(): { end: number; times: number[] } {
   return { end, times };
 }
 
-export function getMockProviderHistory(): ProviderHistory {
-  const { times } = timeline();
-  const providerHistory: ProviderHistory = [];
-  for (const p of PROVIDERS) {
-    for (const t of times) {
-      providerHistory.push({
-        date: iso(t),
-        slug: p.slug,
-        name: p.name,
-        score: series(p.slug, CATEGORY_BASE[p.category], t, 1.6),
-      });
-    }
-  }
-  return providerHistory;
-}
-
 export function getMockDashboardData(): DashboardData {
   const { end, times } = timeline();
 
@@ -138,7 +111,6 @@ export function getMockDashboardData(): DashboardData {
       ? { globalScore: previous.globalScore, date: previous.date }
       : null,
     history,
-    providers: PROVIDERS.map(({ slug, name }) => ({ slug, name })),
     cveCounts,
   };
 }

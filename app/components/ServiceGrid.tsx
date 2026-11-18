@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ServiceGrid as Grid } from '@/data/service-grid';
 import { formatDate } from '@/data/chart';
-import { CATEGORY_NAMES } from './TrendChart';
+import { CATEGORY_NAMES, CATEGORY_ORDER } from '@/data/categories';
 
-const CATEGORY_ORDER = ['cloud-infra', 'ai', 'dev-tools', 'productivity', 'comms', 'fintech'];
 const SEVERITY = ['', 'minor', 'major', 'critical'];
 
 // Layout in SVG units; the SVG scales to its container width.
@@ -157,11 +156,11 @@ export function ServiceGrid({ grid }: { grid: Grid }) {
   return (
     <div>
       <div className="grid-filters" role="group" aria-label="Filter by category">
-        <button className={`v2-seg${filter === null ? ' is-active' : ''}`} aria-pressed={filter === null} onClick={() => setFilter(null)}>
+        <button className={`ui-seg${filter === null ? ' is-active' : ''}`} aria-pressed={filter === null} onClick={() => setFilter(null)}>
           All
         </button>
         {categories.map((c) => (
-          <button key={c} className={`v2-seg${filter === c ? ' is-active' : ''}`} aria-pressed={filter === c} onClick={() => setFilter(c)}>
+          <button key={c} className={`ui-seg${filter === c ? ' is-active' : ''}`} aria-pressed={filter === c} onClick={() => setFilter(c)}>
             {CATEGORY_NAMES[c] ?? c}
           </button>
         ))}

@@ -4,7 +4,7 @@
 
 **The Death Index** — tracking the slow heat death of the internet, one status page at a time.
 
-A composite reliability score (0–100) for 50 major SaaS providers, updated daily. As AI adoption accelerates across every product category, does overall service reliability degrade? The Death Index tracks the answer.
+A composite score (0–100, higher is worse) built from the status pages of 50 major SaaS providers, updated daily. As AI adoption accelerates across every product category, does overall service reliability degrade? The Death Index tracks the answer.
 
 **Live at [istheinternetdying.com](https://istheinternetdying.com)**
 
@@ -106,7 +106,7 @@ Check [open issues](https://github.com/Ivor808/istheinternetdying/issues) or sub
 ```
 app/
   routes/           # Pages (index, methodology, API endpoints)
-  components/       # React components (clock, chart, table, etc.)
+  components/       # React components (Death Index card, service grid, share menu, etc.)
 src/
   providers/        # Status page provider plugins
   scoring/          # Score calculation (envelope model, aggregation)

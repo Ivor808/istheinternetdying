@@ -1,8 +1,8 @@
 import { db } from '../db/client';
-import { dailyIndex, dailyScores, providers, monthlyCves, incidents } from '../db/schema';
-import { eq, gte, inArray } from 'drizzle-orm';
+import { dailyIndex, providers, monthlyCves, incidents } from '../db/schema';
+import { gte } from 'drizzle-orm';
 import { isIndexCovered } from '../scoring/daily-index';
-import { getMockDashboardData, getMockProviderHistory, getMockServiceGrid } from './mock';
+import { getMockDashboardData, getMockServiceGrid } from './mock';
 import { GRID_DAYS, buildServiceGrid, type GridIncident, type ServiceGrid } from './service-grid';
 
 // Scores are unrounded; round at display. Only dates with adequate provider
@@ -22,34 +22,11 @@ export interface DashboardData {
     globalScore: number;
     categoryScores: Record<string, number>;
   }>;
-  // Provider history is fetched on demand (getProviderHistory) to keep the page payload small
-  providers: Array<{
-    slug: string;
-    name: string;
-  }>;
   cveCounts: Array<{
     date: string;
     count: number;
   }>;
 }
-
-const NOTABLE_PROVIDERS = [
-  'cloudflare',
-  'github',
-  'openai',
-  'anthropic',
-  'discord',
-  'npm',
-  'dropbox',
-  'reddit',
-];
-
-export type ProviderHistory = Array<{
-  date: string;
-  slug: string;
-  name: string;
-  score: number;
-}>;
 
 export async function getDashboardData(): Promise<DashboardData> {
   if (import.meta.env.MODE === 'mock') return getMockDashboardData();
@@ -61,11 +38,6 @@ export async function getDashboardData(): Promise<DashboardData> {
     ? new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     : null;
   const previous = history.find((h) => h.date === sevenDaysBeforeStr);
-
-  const notableProviderRows = await db
-    .select({ slug: providers.slug, name: providers.name })
-    .from(providers)
-    .where(inArray(providers.slug, NOTABLE_PROVIDERS));
 
   const cveRows = await db
     .select({ date: monthlyCves.date, count: monthlyCves.count })
@@ -87,9 +59,6 @@ export async function getDashboardData(): Promise<DashboardData> {
         }
       : null,
     history,
-    providers: NOTABLE_PROVIDERS.flatMap((slug) =>
-      notableProviderRows.filter((p) => p.slug === slug)
-    ),
     cveCounts: cveRows,
   };
 }
@@ -102,38 +71,6 @@ export async function getCoveredHistory(): Promise<DashboardData['history']> {
     globalScore: Number(h.globalScore),
     categoryScores: h.categoryScores,
   }));
-}
-
-export async function getProviderHistory(): Promise<ProviderHistory> {
-  if (import.meta.env.MODE === 'mock') return getMockProviderHistory();
-
-  // Same dates as the index chart; older rows predate coverage tracking
-  const coveredDates = new Set((await getCoveredHistory()).map((h) => h.date));
-
-  const notableProviderRows = await db
-    .select({ id: providers.id, slug: providers.slug, name: providers.name })
-    .from(providers)
-    .where(inArray(providers.slug, NOTABLE_PROVIDERS));
-
-  const providerHistory: ProviderHistory = [];
-  for (const p of notableProviderRows) {
-    const scores = await db
-      .select({ date: dailyScores.date, score: dailyScores.score })
-      .from(dailyScores)
-      .where(eq(dailyScores.providerId, p.id))
-      .orderBy(dailyScores.date);
-
-    for (const s of scores) {
-      if (!coveredDates.has(s.date)) continue;
-      providerHistory.push({
-        date: s.date,
-        slug: p.slug,
-        name: p.name,
-        score: Number(s.score),
-      });
-    }
-  }
-  return providerHistory;
 }
 
 // Per-service daily stats for the last GRID_DAYS days, straight from incidents

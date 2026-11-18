@@ -298,10 +298,21 @@ function Methodology() {
 
         <Section title="The Death Index (global score)">
           <p>
-            The global Death Index is the{' '}
+            Global reliability is the{' '}
             <strong style={{ color: '#ddd' }}>average of all category scores</strong>,
             with equal weight per category. This prevents any one category with
             lots of providers (e.g., developer tools) from dominating the index.
+          </p>
+          <p>
+            The Death Index is that number flipped, so{' '}
+            <strong style={{ color: '#ddd' }}>higher is worse</strong>:
+          </p>
+          <p style={{ fontFamily: 'monospace', color: '#ddd', margin: '1rem 0' }}>
+            Death Index = 100 − global reliability
+          </p>
+          <p>
+            0 means every service had a clean week; 100 means everything was down.
+            Category numbers on the site are flipped the same way.
           </p>
           <p>
             A provider is only included for a given date if it covers that date
@@ -310,10 +321,17 @@ function Methodology() {
           </p>
         </Section>
 
+        <Section title="Normal">
+          <p>
+            The shaded "normal" range on the index and category charts is the
+            middle half of all past values (25th to 75th percentile). A reading
+            above it is worse than usual.
+          </p>
+        </Section>
+
         <Section title="The clock">
           <p>
-            The clock maps the Death Index to a "minutes to midnight" metaphor,
-            inspired by the{' '}
+            The clock is a picture of the same number, after the{' '}
             <a
               href="https://thebulletin.org/doomsday-clock/"
               target="_blank"
@@ -322,28 +340,19 @@ function Methodology() {
             >
               Bulletin of the Atomic Scientists' Doomsday Clock
             </a>
-            .
+            : at 0 the hand points to six o'clock, and it sweeps up to midnight
+            as the index approaches 100.
           </p>
-          <p>The mapping is linear:</p>
-          <p style={{ fontFamily: 'monospace', color: '#ddd', margin: '1rem 0' }}>
-            minutes to midnight = 12 × (score / 100)
+        </Section>
+
+        <Section title="Right now">
+          <p>
+            The index is scored once a day, after each day ends. The "having
+            issues right now" list is separate: every few minutes we read each
+            provider's current status (the same status page, its{' '}
+            <code>status.json</code> summary) and list any that report a minor,
+            major or critical problem. Maintenance doesn't count.
           </p>
-          <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Score</th>
-                <th style={thStyle}>Minutes to midnight</th>
-                <th style={thStyle}>Meaning</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td style={tdStyle}>100</td><td style={tdStyle}>12.0</td><td style={tdStyle}>Everything's fine (noon)</td></tr>
-              <tr><td style={tdStyle}>75</td><td style={tdStyle}>9.0</td><td style={tdStyle}>Some degradation</td></tr>
-              <tr><td style={tdStyle}>50</td><td style={tdStyle}>6.0</td><td style={tdStyle}>Significant issues</td></tr>
-              <tr><td style={tdStyle}>25</td><td style={tdStyle}>3.0</td><td style={tdStyle}>Widespread outages</td></tr>
-              <tr><td style={tdStyle}>0</td><td style={tdStyle}>0.0</td><td style={tdStyle}>Midnight (total meltdown)</td></tr>
-            </tbody>
-          </table>
         </Section>
 
         <Section title="The AI Era line">
