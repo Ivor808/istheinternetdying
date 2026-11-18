@@ -9,6 +9,15 @@ interface Props {
   text: string;
 }
 
+declare global {
+  interface Window {
+    umami?: { track: (name: string, data?: Record<string, string>) => void };
+  }
+}
+
+// Umami custom events; the script may be blocked or not loaded yet
+const track = (name: string, data: Record<string, string>) => window.umami?.track(name, data);
+
 const BADGE_MD = `[![Death Index](${SITE_URL}/badge.svg)](${SITE_URL})`;
 const EMBED_HTML = `<iframe src="${SITE_URL}/embed" width="400" height="250" style="border:0" title="Death Index" loading="lazy"></iframe>`;
 
@@ -30,22 +39,27 @@ export function ShareMenu({ url, imageUrl, text }: Props) {
     };
   }, [open]);
 
+  const page = new URL(url).pathname === '/' ? 'today' : 'day';
+
   const onShare = async () => {
     // Touch devices get the native sheet; desktop share sheets are awkward, so use the menu there
     if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
       try {
         await navigator.share({ title: 'Is the internet dying?', text, url });
+        track('share', { how: 'native', page });
         return;
       } catch {
         // Cancelled or unsupported: fall back to the menu
       }
     }
+    if (!open) track('share menu', { page });
     setOpen((v) => !v);
   };
 
   const copy = async (key: string, value: string) => {
     try {
       await navigator.clipboard.writeText(value);
+      track('share', { how: key, page });
       setCopied(key);
       window.setTimeout(() => setCopied((c) => (c === key ? null : c)), 1500);
     } catch {
@@ -68,7 +82,7 @@ export function ShareMenu({ url, imageUrl, text }: Props) {
       {open && (
         <span className="sm-menu" role="menu">
           {item('link', 'copy link', `${text} ${url}`)}
-          <a className="sm-item" href={imageUrl} download="death-index.png">
+          <a className="sm-item" href={imageUrl} download="death-index.png" onClick={() => track('share', { how: 'image', page })}>
             download image
           </a>
           {item('badge', 'README badge', BADGE_MD)}

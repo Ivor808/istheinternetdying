@@ -2,8 +2,8 @@ import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { cardFromDay } from '@/data/card';
 import { formatDate } from '@/data/chart';
-import { getDay, type DayData, type DayIncident } from '@/data/day';
-import { formatDelta } from '@/data/death';
+import { getDay, type DayIncident } from '@/data/day';
+import { daySummary, headline } from '@/data/day-text';
 import { SITE_URL } from '@/data/site';
 import { DeathCard } from '../components/DeathCard';
 import { ShareMenu } from '../components/ShareMenu';
@@ -29,10 +29,7 @@ export const Route = createFileRoute('/day/$date')({
     const { day, card } = loaderData;
     const url = `${SITE_URL}/day/${day.date}`;
     const title = `${formatDate(day.date)}: ${headline(day)} — Death Index ${card.death}`;
-    const names = card.services.slice(0, 6).map((s) => s.name).join(', ');
-    const description = `Death Index ${card.death}/100${card.delta ? ` (${formatDelta(card.delta)} vs the week before)` : ''}. ${
-      card.services.length > 0 ? `${card.services.length} ${card.servicesLabel}: ${names}${card.services.length > 6 ? ' and more' : ''}.` : 'No incidents.'
-    }`;
+    const description = daySummary(day);
     const image = `${SITE_URL}/card/${day.date}.png`;
     return {
       meta: [
@@ -54,14 +51,6 @@ export const Route = createFileRoute('/day/$date')({
   component: DayPage,
 });
 
-function headline(day: DayData): string {
-  const big = day.events.filter((e) => e.category === 'outage' || e.major);
-  if (big.length > 0) return big.map((e) => e.label).join(' · ');
-  const n = new Set(day.incidents.map((i) => i.slug)).size;
-  if (n === 0) return 'No incidents';
-  return `${n} ${n === 1 ? 'service' : 'services'} had incidents`;
-}
-
 const SEVERITY_COLOR = { minor: '#8b8b96', major: '#ff8a5c', critical: '#ff4d4d' };
 
 const time = (iso: string) => iso.slice(11, 16);
@@ -80,7 +69,6 @@ const hours = (h: number) => (h < 1 ? `${Math.max(1, Math.round(h * 60))}m` : `$
 
 function DayPage() {
   const { day, card } = Route.useLoaderData();
-  const services = new Set(day.incidents.map((i) => i.slug)).size;
 
   return (
     <div className="dp">
@@ -97,11 +85,7 @@ function DayPage() {
         <div>
           <p className="dp-date">{formatDate(day.date)}</p>
           <h1 className="dp-h1">{headline(day)}</h1>
-          {day.events.length > 0 && services > 0 && (
-            <p className="dp-sub">
-              {services} {services === 1 ? 'service' : 'services'} we track had incidents.
-            </p>
-          )}
+          <p className="dp-sub">{daySummary(day)}</p>
         </div>
         <DeathCard
           death={card.death}
@@ -187,7 +171,7 @@ const DP_CSS = `
 .dp-hero { display: grid; grid-template-columns: 1fr auto; gap: 2.5rem; align-items: center; margin-top: 3.5rem; }
 .dp-date { font-family: ui-monospace, monospace; color: #8b8b96; font-size: 0.9rem; }
 .dp-h1 { font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; margin-top: 0.5rem; }
-.dp-sub { margin-top: 0.9rem; font-size: 1.1rem; color: #8b8b96; }
+.dp-sub { margin-top: 0.9rem; font-size: 1.05rem; line-height: 1.55; color: #8b8b96; max-width: 38rem; }
 .dp-section { margin-top: 4rem; }
 .dp-h2 { font-size: 1.2rem; font-weight: 700; }
 .dp-count { font-family: ui-monospace, monospace; font-size: 0.75rem; font-weight: 400; color: #8b8b96; margin-left: 0.5rem; }

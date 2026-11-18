@@ -48,6 +48,7 @@ import { ShareMenu } from '../components/ShareMenu';
 import { Logo } from '../components/Logo';
 import { logoPath } from '@/data/logos';
 import { SITE_URL } from '@/data/site';
+import { changeWords, listNames } from '@/data/day-text';
 
 const loadPage = createServerFn().handler(async () => {
   const [dashboard, grid, live] = await Promise.all([getDashboardData(), getServiceGrid(), getLiveStatus()]);
@@ -72,6 +73,26 @@ function datasetLd(firstDate: string | undefined) {
   };
 }
 
+// Plain facts for search snippets and AI assistants; the page itself shows the same numbers
+function homeDescription(history: History, live: LiveStatus): string | null {
+  const current = history[history.length - 1];
+  if (!current) return null;
+  const death = Math.round(toDeath(current.globalScore));
+  const weekAgo = history.find((h) => h.date === new Date(toTs(current.date) - 7 * 86_400_000).toISOString().slice(0, 10));
+  const change = weekAgo ? `, ${changeWords(death - Math.round(toDeath(weekAgo.globalScore)))} from a week earlier` : '';
+  const broken = live.services
+    .filter((s) => isIssue(s.indicator))
+    .sort((a, b) => fameRank(a.slug) - fameRank(b.slug))
+    .map((s) => displayName(s.slug, s.name));
+  // Mostly unreachable status pages would make "none" a lie
+  const now =
+    live.failed > live.services.length / 2
+      ? ''
+      : broken.length === 0
+      ? `None of the ${providerConfigs.length} services we track report issues right now.`
+      : `${broken.length} of the ${providerConfigs.length} services we track report issues right now, including ${listNames(broken.slice(0, 3))}.`;
+  return `The Death Index is ${death}/100 (higher is worse)${change}. ${now ? `${now} ` : ''}A daily reliability score built from public status pages.`;
+}
 
 // Keeps the live status fresh while the tab is visible
 function useLiveStatus(initial: LiveStatus): LiveStatus {
@@ -126,8 +147,16 @@ export const Route = createFileRoute('/')({
     // Live card; the date busts link-preview caches once a day
     const latest = history[history.length - 1]?.date;
     const image = `${SITE_URL}/card/today.png${latest ? `?v=${latest}` : ''}`;
+    const description = loaderData ? homeDescription(history, loaderData.live) : null;
     return {
       meta: [
+        ...(description
+          ? [
+              { name: 'description', content: description },
+              { property: 'og:description', content: description },
+              { name: 'twitter:description', content: description },
+            ]
+          : []),
         { property: 'og:url', content: `${SITE_URL}/` },
         { property: 'og:image', content: image },
         { name: 'twitter:image', content: image },

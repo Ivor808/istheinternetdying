@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { serve } from "srvx";
+import { track } from "./analytics.js";
 
 const { default: app } = await import("./dist/server/ssr.js");
 
@@ -45,7 +46,9 @@ const MIME_TYPES = {
 serve({
   port,
   async fetch(request) {
-    return compress(request, await handle(request));
+    const response = await handle(request);
+    track(request, response.status, CANONICAL_HOST);
+    return compress(request, response);
   },
 });
 

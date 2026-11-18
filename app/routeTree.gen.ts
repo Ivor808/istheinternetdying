@@ -12,12 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as V2RouteImport } from './routes/v2'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as MethodologyRouteImport } from './routes/methodology'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as EmbedRouteImport } from './routes/embed'
 import { Route as BadgeDotsvgRouteImport } from './routes/badge[.]svg'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DayDateRouteImport } from './routes/day.$date'
 import { Route as CardFileRouteImport } from './routes/card.$file'
+import { Route as ApiTodayDotjsonRouteImport } from './routes/api/today[.]json'
 import { Route as ApiCronRouteImport } from './routes/api/cron'
+import { Route as ApiDayFileRouteImport } from './routes/api/day/$file'
 
 const V2Route = V2RouteImport.update({
   id: '/v2',
@@ -32,6 +35,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const MethodologyRoute = MethodologyRouteImport.update({
   id: '/methodology',
   path: '/methodology',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmbedRoute = EmbedRouteImport.update({
@@ -59,9 +67,19 @@ const CardFileRoute = CardFileRouteImport.update({
   path: '/card/$file',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTodayDotjsonRoute = ApiTodayDotjsonRouteImport.update({
+  id: '/api/today.json',
+  path: '/api/today.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronRoute = ApiCronRouteImport.update({
   id: '/api/cron',
   path: '/api/cron',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDayFileRoute = ApiDayFileRouteImport.update({
+  id: '/api/day/$file',
+  path: '/api/day/$file',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -69,35 +87,44 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/badge.svg': typeof BadgeDotsvgRoute
   '/embed': typeof EmbedRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/methodology': typeof MethodologyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/v2': typeof V2Route
   '/api/cron': typeof ApiCronRoute
+  '/api/today.json': typeof ApiTodayDotjsonRoute
   '/card/$file': typeof CardFileRoute
   '/day/$date': typeof DayDateRoute
+  '/api/day/$file': typeof ApiDayFileRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/badge.svg': typeof BadgeDotsvgRoute
   '/embed': typeof EmbedRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/methodology': typeof MethodologyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/v2': typeof V2Route
   '/api/cron': typeof ApiCronRoute
+  '/api/today.json': typeof ApiTodayDotjsonRoute
   '/card/$file': typeof CardFileRoute
   '/day/$date': typeof DayDateRoute
+  '/api/day/$file': typeof ApiDayFileRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/badge.svg': typeof BadgeDotsvgRoute
   '/embed': typeof EmbedRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/methodology': typeof MethodologyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/v2': typeof V2Route
   '/api/cron': typeof ApiCronRoute
+  '/api/today.json': typeof ApiTodayDotjsonRoute
   '/card/$file': typeof CardFileRoute
   '/day/$date': typeof DayDateRoute
+  '/api/day/$file': typeof ApiDayFileRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -105,46 +132,58 @@ export interface FileRouteTypes {
     | '/'
     | '/badge.svg'
     | '/embed'
+    | '/llms.txt'
     | '/methodology'
     | '/sitemap.xml'
     | '/v2'
     | '/api/cron'
+    | '/api/today.json'
     | '/card/$file'
     | '/day/$date'
+    | '/api/day/$file'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/badge.svg'
     | '/embed'
+    | '/llms.txt'
     | '/methodology'
     | '/sitemap.xml'
     | '/v2'
     | '/api/cron'
+    | '/api/today.json'
     | '/card/$file'
     | '/day/$date'
+    | '/api/day/$file'
   id:
     | '__root__'
     | '/'
     | '/badge.svg'
     | '/embed'
+    | '/llms.txt'
     | '/methodology'
     | '/sitemap.xml'
     | '/v2'
     | '/api/cron'
+    | '/api/today.json'
     | '/card/$file'
     | '/day/$date'
+    | '/api/day/$file'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BadgeDotsvgRoute: typeof BadgeDotsvgRoute
   EmbedRoute: typeof EmbedRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   MethodologyRoute: typeof MethodologyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   V2Route: typeof V2Route
   ApiCronRoute: typeof ApiCronRoute
+  ApiTodayDotjsonRoute: typeof ApiTodayDotjsonRoute
   CardFileRoute: typeof CardFileRoute
   DayDateRoute: typeof DayDateRoute
+  ApiDayFileRoute: typeof ApiDayFileRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -168,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/methodology'
       fullPath: '/methodology'
       preLoaderRoute: typeof MethodologyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/embed': {
@@ -205,11 +251,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CardFileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/today.json': {
+      id: '/api/today.json'
+      path: '/api/today.json'
+      fullPath: '/api/today.json'
+      preLoaderRoute: typeof ApiTodayDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron': {
       id: '/api/cron'
       path: '/api/cron'
       fullPath: '/api/cron'
       preLoaderRoute: typeof ApiCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/day/$file': {
+      id: '/api/day/$file'
+      path: '/api/day/$file'
+      fullPath: '/api/day/$file'
+      preLoaderRoute: typeof ApiDayFileRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -219,12 +279,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BadgeDotsvgRoute: BadgeDotsvgRoute,
   EmbedRoute: EmbedRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   MethodologyRoute: MethodologyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   V2Route: V2Route,
   ApiCronRoute: ApiCronRoute,
+  ApiTodayDotjsonRoute: ApiTodayDotjsonRoute,
   CardFileRoute: CardFileRoute,
   DayDateRoute: DayDateRoute,
+  ApiDayFileRoute: ApiDayFileRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

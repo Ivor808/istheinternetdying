@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY --from=build /app/dist dist
-COPY server.js .
+COPY server.js analytics.js ./
 COPY public public
 COPY assets assets
 COPY drizzle drizzle

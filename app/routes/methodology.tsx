@@ -355,6 +355,16 @@ function Methodology() {
           </p>
         </Section>
 
+        <Section title="Data">
+          <p>
+            The numbers are free to use. <a href="/api/today.json" style={{ color: '#ff4444', textDecoration: 'none' }}><code style={codeStyle}>/api/today.json</code></a>{' '}
+            has the latest index and what's broken now, and{' '}
+            <code style={codeStyle}>/api/day/YYYY-MM-DD.json</code> has any scored day with its incidents.{' '}
+            <a href="/llms.txt" style={{ color: '#ff4444', textDecoration: 'none' }}><code style={codeStyle}>/llms.txt</code></a>{' '}
+            describes the site for AI assistants.
+          </p>
+        </Section>
+
         <Section title="The AI Era line">
           <p>
             We mark{' '}
